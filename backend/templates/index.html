@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CreatorIQ - Creator Analytics & Content Performance Dashboard</title>
+  
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              200: '#ddd6fe',
+              300: '#c084fc',
+              400: '#a855f7',
+              500: '#8b5cf6', // Violet
+              600: '#7c3aed',
+              700: '#6d28d9',
+              800: '#5b21b6',
+              900: '#4c1d95',
+            },
+            dark: {
+              bg: '#08090d',
+              card: '#10121a',
+              cardMuted: '#161924',
+              border: '#1f2230',
+              borderMuted: '#2a2e40',
+              accent: '#3b82f6'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          animation: {
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'float': 'float 6s ease-in-out infinite',
+            'float-delayed': 'float 6s ease-in-out infinite 3s',
+            'shine': 'shine 1.5s ease-in-out infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-10px)' },
+            },
+            shine: {
+              '0%': { left: '-100%' },
+              '100%': { left: '100%' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18 and ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  
+  <!-- Babel Standalone for JSX compilation in-browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #08090d;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1f2230;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2a2e40;
+    }
+    
+    /* Glowing visual effects */
+    .glow-purple {
+      box-shadow: 0 0 50px -10px rgba(139, 92, 246, 0.15);
+    }
+    .glow-blue {
+      box-shadow: 0 0 50px -10px rgba(59, 130, 246, 0.15);
+    }
+    .text-glow {
+      text-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+    }
+  </style>
+</head>
+<body class="h-full font-sans antialiased text-slate-200 bg-dark-bg selection:bg-brand-500 selection:text-white overflow-hidden">
+
+  <!-- Root Div for React -->
+  <div id="root" class="h-full"></div>
+
+  <!-- React & App Logic -->
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // Custom Input Component with Floating Label
+    function FloatingInput({ id, label, type = 'text', value, onChange, icon, required = true, autocomplete }) {
+      const [focused, setFocused] = useState(false);
+      const isFilled = value && value.length > 0;
+
+      return (
+        <div class="relative mb-5 group">
+          <div class={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors duration-300 ${focused ? 'text-brand-400' : 'text-slate-500 group-hover:text-slate-400'}`}>
+            {icon}
+          </div>
+          <input
+            id={id}
+            name={id}
+            type={type}
+            required={required}
+            value={value}
+            autoComplete={autocomplete}
+            onChange={onChange}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            class={`block w-full pl-10 pr-4 py-3 bg-dark-cardMuted/60 border rounded-xl text-slate-100 placeholder-transparent focus:outline-none transition-all duration-300 focus:bg-dark-cardMuted/90 focus:ring-1 focus:ring-brand-500/50 ${
+              focused ? 'border-brand-500 shadow-[0_0_15px_-3px_rgba(139,92,246,0.2)]' : 'border-dark-border hover:border-slate-700'
+            }`}
+            placeholder={label}
+          />
+          <label
+            htmlFor={id}
+            class={`absolute left-10 transition-all duration-300 pointer-events-none ${
+              focused || isFilled
+                ? '-top-2 text-xs font-semibold px-1.5 py-0.5 bg-dark-card rounded text-brand-400 scale-95 translate-y-0'
+                : 'top-3.5 text-sm text-slate-500'
+            }`}
+          >
+            {label}
+          </label>
+        </div>
+      );
+    }
+
+    // Main App Component
+    function App() {
+      const [isLogin, setIsLogin] = useState(true);
+      const [isLoading, setIsLoading] = useState(false);
+      const [user, setUser] = useState(null);
+      const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: '',
+        agreeToTerms: false
+      });
+      const [passwordStrength, setPasswordStrength] = useState(0); // 0 to 4
+      const [errorMsg, setErrorMsg] = useState('');
+      const [successMsg, setSuccessMsg] = useState('');
+
+      // Check if user is already logged in
+      useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
+      }, []);
+
+      // Update password strength
+      useEffect(() => {
+        if (!formData.password) {
+          setPasswordStrength(0);
+          return;
+        }
+        let score = 0;
+        if (formData.password.length >= 8) score++;
+        if (/[A-Z]/.test(formData.password)) score++;
+        if (/[0-9]/.test(formData.password)) score++;
+        if (/[^A-Za-z0-9]/.test(formData.password)) score++;
+        setPasswordStrength(score);
+      }, [formData.password]);
+
+      const handleInputChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setFormData(prev => ({
+          ...prev,
+          [name]: type === 'checkbox' ? checked : value
+        }));
+        // Reset errors
+        setErrorMsg('');
+        setSuccessMsg('');
+      };
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setErrorMsg('');
+        setSuccessMsg('');
+        
+        try {
+          const endpoint = isLogin ? '/api/login/' : '/api/register/';
+          const payload = isLogin 
+            ? { email: formData.email, password: formData.password }
+            : { name: formData.name, email: formData.email, password: formData.password };
+            
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+          });
+          
+          const result = await response.json();
+          setIsLoading(false);
+          
+          if (!response.ok) {
+            setErrorMsg(result.error || 'An error occurred. Please try again.');
+            return;
+          }
+          
+          if (isLogin) {
+            setSuccessMsg('Login Successful!');
+            localStorage.setItem('user', JSON.stringify(result.user));
+            setTimeout(() => {
+              setUser(result.user);
+              setSuccessMsg('');
+            }, 1000);
+          } else {
+            setSuccessMsg('Registration successful! Toggling to Sign In...');
+            setTimeout(() => {
+              setIsLogin(true);
+              setSuccessMsg('');
+              setFormData(prev => ({ ...prev, password: '' }));
+            }, 1500);
+          }
+        } catch (err) {
+          setIsLoading(false);
+          setErrorMsg('Database connection error. Check Aiven connection state.');
+        }
+      };
+
+      const handleLogout = () => {
+        localStorage.removeItem('user');
+        setUser(null);
+        setFormData({
+          name: '',
+          email: '',
+          password: '',
+          agreeToTerms: false
+        });
+      };
+
+      // Mock Google OAuth Popup
+      const handleGoogleAuth = () => {
+        setIsLoading(true);
+        const width = 500;
+        const height = 600;
+        const left = window.top.outerWidth / 2 + window.top.screenX - width / 2;
+        const top = window.top.outerHeight / 2 + window.top.screenY - height / 2;
+        
+        // Open mock popup
+        const mockPopup = window.open(
+          'about:blank',
+          'GoogleOAuthPopup',
+          `width=${width},height=${height},top=${top},left=${left},scrollbars=no,resizable=no`
+        );
+        
+        mockPopup.document.write(`
+          <html>
+            <head>
+              <title>Sign in with Google</title>
+              <script src="https://cdn.tailwindcss.com"><\/script>
+              <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+              <style>body { font-family: 'Inter', sans-serif; }</style>
+            </head>
+            <body class="bg-slate-50 flex flex-col justify-between h-full p-6 text-slate-800 selection:bg-blue-100">
+              <div class="flex flex-col items-center mt-6">
+                <svg class="h-10 w-10 mb-4" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                <h1 class="text-xl font-semibold text-slate-900">Choose an account</h1>
+                <p class="text-sm text-slate-500 mt-1">to continue to <span class="font-medium text-slate-700">CreatorIQ</span></p>
+              </div>
+
+              <div class="flex-1 flex flex-col justify-center space-y-3 max-w-sm w-full mx-auto">
+                <button onclick="selectAccount('Alex Carter', 'alex.carter@gmail.com')" class="flex items-center space-x-3 p-3 border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 rounded-lg transition-all text-left w-full group">
+                  <div class="h-9 w-9 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-sm">A</div>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold text-slate-800">Alex Carter</div>
+                    <div class="text-xs text-slate-500">alex.carter@gmail.com</div>
+                  </div>
+                </button>
+
+                <button onclick="selectAccount('Sarah Jenkins', 'sarah.j@agency-iq.com')" class="flex items-center space-x-3 p-3 border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 rounded-lg transition-all text-left w-full group">
+                  <div class="h-9 w-9 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-sm">S</div>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold text-slate-800">Sarah Jenkins</div>
+                    <div class="text-xs text-slate-500">sarah.j@agency-iq.com</div>
+                  </div>
+                </button>
+              </div>
+
+              <div class="text-xs text-slate-400 text-center flex justify-between px-2">
+                <span>English (United States)</span>
+                <span class="space-x-2">
+                  <a href="#" class="hover:underline">Help</a>
+                  <a href="#" class="hover:underline">Privacy</a>
+                  <a href="#" class="hover:underline">Terms</a>
+                </span>
+              </div>
+
+              <script>
+                function selectAccount(name, email) {
+                  window.opener.postMessage({ type: 'GOOGLE_OAUTH_SUCCESS', name, email }, '*');
+                  window.close();
+                }
+              <\/script>
+            </body>
+          </html>
+        `);
+
+        const handleOAuthMessage = (event) => {
+          if (event.data && event.data.type === 'GOOGLE_OAUTH_SUCCESS') {
+            const { name, email } = event.data;
+            const googleUser = { email, role: 'Creator', name };
+            localStorage.setItem('user', JSON.stringify(googleUser));
+            setSuccessMsg(`Google Authentication succeeded as ${name}!`);
+            setTimeout(() => {
+              setIsLoading(false);
+              setUser(googleUser);
+              setSuccessMsg('');
+            }, 1200);
+            window.removeEventListener('message', handleOAuthMessage);
+          }
+        };
+
+        window.addEventListener('message', handleOAuthMessage);
+      };
+
+      const getStrengthStyles = () => {
+        switch (passwordStrength) {
+          case 1: return { width: '25%', color: 'bg-red-500', text: 'Weak password' };
+          case 2: return { width: '50%', color: 'bg-orange-500', text: 'Fair password' };
+          case 3: return { width: '75%', color: 'bg-yellow-500', text: 'Good password' };
+          case 4: return { width: '100%', color: 'bg-emerald-500', text: 'Strong password' };
+          default: return { width: '0%', color: 'bg-slate-700', text: '' };
+        }
+      };
+
+      // LANDING SCREEN: If user is logged in
+      if (user) {
+        return (
+          <div class="h-full flex items-center justify-center p-6 relative overflow-hidden bg-dark-bg">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(139,92,246,0.08),transparent_70%)]"></div>
+            <div class="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-blue-500/5 filter blur-[120px]"></div>
+            <div class="absolute -bottom-40 -right-40 w-96 h-96 rounded-full bg-purple-500/5 filter blur-[120px]"></div>
+
+            <div class="relative max-w-md w-full bg-dark-card border border-dark-border rounded-3xl p-8 text-center shadow-2xl glow-purple animate-slide-up">
+              {/* Checkmark icon with animation */}
+              <div class="mx-auto h-20 w-20 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mb-6 shadow-inner animate-pulse-slow">
+                <svg class="h-10 w-10 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+
+              <h1 class="text-3xl font-extrabold tracking-tight text-white mb-2">Login Successful!</h1>
+              <p class="text-slate-400 text-sm mb-6">Welcome back to the CreatorIQ dashboard.</p>
+
+              {/* User details card */}
+              <div class="bg-dark-cardMuted/50 border border-dark-border/60 rounded-2xl p-5 mb-8 text-left space-y-3">
+                <div class="flex justify-between border-b border-dark-border/40 pb-2.5">
+                  <span class="text-xs text-slate-500">Name</span>
+                  <span class="text-sm font-semibold text-slate-200">{user.name}</span>
+                </div>
+                <div class="flex justify-between border-b border-dark-border/40 pb-2.5">
+                  <span class="text-xs text-slate-500">Email Address</span>
+                  <span class="text-sm font-mono text-slate-300">{user.email}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-xs text-slate-500">Workspace Role</span>
+                  <span class="px-2 py-0.5 text-xs bg-brand-500/10 border border-brand-500/20 text-brand-400 rounded-md font-medium">{user.role}</span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div class="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => alert("Dashboard Analytics layout will load in the next milestone!")}
+                  class="w-full py-3 px-4 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-brand-500/10 active:scale-[0.99]"
+                >
+                  Enter Workspace
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  class="w-full py-3 px-4 bg-transparent border border-dark-border hover:border-slate-600 hover:bg-dark-cardMuted/40 text-slate-400 hover:text-slate-200 font-medium rounded-xl transition-all"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // AUTH FORMS: Login & Signup
+      return (
+        <div class="h-full flex overflow-hidden">
+          
+          {/* LEFT SIDE: Marketing/Branding Visual Panel */}
+          <div class="hidden lg:flex lg:w-1/2 relative bg-dark-bg border-r border-dark-border flex-col justify-between p-12 overflow-hidden select-none">
+            <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(139,92,246,0.12),transparent_50%)]"></div>
+            <div class="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-blue-500/5 filter blur-[120px] animate-pulse-slow"></div>
+            <div class="absolute bottom-10 right-10 w-80 h-80 rounded-full bg-brand-500/5 filter blur-[100px] animate-pulse-slow"></div>
+            
+            <div class="relative z-10 flex items-center space-x-3">
+              <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-brand-500/20">
+                <svg class="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18M3 12h18M3 6h18M3 18h18" />
+                </svg>
+              </div>
+              <span class="text-xl font-bold tracking-tight text-white bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-300">Creator<span class="text-brand-500">IQ</span></span>
+            </div>
+
+            <div class="relative z-10 my-auto max-w-md">
+              <h2 class="text-4xl font-extrabold tracking-tight leading-tight text-white mb-6">
+                Understand your audience. <br/>
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-brand-400 via-indigo-300 to-blue-400 text-glow">Scale your brand.</span>
+              </h2>
+              <p class="text-slate-400 leading-relaxed mb-8 text-sm">
+                Consolidate your multi-platform analytics. Track metrics, project future earnings, and manage brand campaigns from a centralized premium workspace.
+              </p>
+
+              <div class="relative bg-dark-card border border-dark-border/80 rounded-2xl p-6 shadow-2xl backdrop-blur-xl animate-float glow-purple">
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex items-center space-x-3">
+                    <div class="h-8 w-8 rounded-full bg-gradient-to-tr from-rose-500 to-yellow-500 flex items-center justify-center text-white text-xs font-bold shadow">
+                      IG
+                    </div>
+                    <div>
+                      <div class="text-xs font-semibold text-slate-200">Sarah Jenkins</div>
+                      <div class="text-[10px] text-slate-500">Instagram Creator</div>
+                    </div>
+                  </div>
+                  <span class="px-2 py-0.5 text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium rounded-full">
+                    +14.2% Growth
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4 border-t border-dark-border/50 pt-4">
+                  <div>
+                    <div class="text-xs text-slate-500 mb-0.5">Reach</div>
+                    <div class="text-sm font-bold text-white">142.8K</div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500 mb-0.5">Engagement</div>
+                    <div class="text-sm font-bold text-white">8.42%</div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500 mb-0.5">Revenue</div>
+                    <div class="text-sm font-bold text-emerald-400">$3,420</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="relative z-10 text-xs text-slate-500 flex items-center justify-between">
+              <span>© 2026 CreatorIQ Systems Inc.</span>
+              <span class="space-x-3">
+                <a href="#" class="hover:underline">Privacy Policy</a>
+                <a href="#" class="hover:underline">Terms of Service</a>
+              </span>
+            </div>
+          </div>
+
+          {/* RIGHT SIDE: Authentication Form Panel */}
+          <div class="w-full lg:w-1/2 bg-dark-bg flex flex-col justify-center px-6 sm:px-16 lg:px-20 xl:px-24 py-12 relative overflow-y-auto">
+            <div class="absolute top-20 right-20 w-72 h-72 rounded-full bg-brand-600/5 filter blur-[80px] animate-pulse-slow"></div>
+            <div class="absolute bottom-20 left-10 w-80 h-80 rounded-full bg-blue-600/5 filter blur-[90px] animate-pulse-slow"></div>
+
+            <div class="mx-auto w-full max-w-md relative z-10">
+              
+              <div class="flex lg:hidden items-center space-x-2 mb-8">
+                <div class="h-8 w-8 rounded-lg bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center">
+                  <svg class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18M3 12h18M3 6h18M3 18h18" />
+                  </svg>
+                </div>
+                <span class="text-lg font-bold tracking-tight text-white">Creator<span class="text-brand-500">IQ</span></span>
+              </div>
+
+              <div class="mb-8">
+                <h2 class="text-3xl font-extrabold text-white tracking-tight">
+                  {isLogin ? 'Welcome back' : 'Create your account'}
+                </h2>
+                <p class="mt-2 text-sm text-slate-400">
+                  {isLogin ? "Enter your credentials to access your insights." : "Join thousands of content creators worldwide."}
+                </p>
+              </div>
+
+              {/* Message Alerts */}
+              {errorMsg && (
+                <div class="mb-5 p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-start space-x-3 animate-slide-up">
+                  <svg class="h-5 w-5 text-rose-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span class="text-sm text-rose-200">{errorMsg}</span>
+                </div>
+              )}
+
+              {successMsg && (
+                <div class="mb-5 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-start space-x-3 animate-slide-up">
+                  <svg class="h-5 w-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span class="text-sm text-emerald-200">{successMsg}</span>
+                </div>
+              )}
+
+              {/* Social Logins */}
+              <div class="grid grid-cols-2 gap-3 mb-6">
+                <button
+                  type="button"
+                  onClick={handleGoogleAuth}
+                  disabled={isLoading}
+                  class="flex justify-center items-center py-2.5 px-4 bg-dark-card border border-dark-border hover:border-slate-600 rounded-xl text-sm font-medium text-slate-200 hover:bg-dark-cardMuted/80 active:bg-dark-card transition-all duration-300 group"
+                >
+                  <svg class="h-5 w-5 mr-2 transition-transform duration-300 group-hover:scale-105" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                  </svg>
+                  Google
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  onClick={() => alert("GitHub Sign In is integrated! Direct integration is mocked for demo purposes.")}
+                  class="flex justify-center items-center py-2.5 px-4 bg-dark-card border border-dark-border hover:border-slate-600 rounded-xl text-sm font-medium text-slate-200 hover:bg-dark-cardMuted/80 active:bg-dark-card transition-all duration-300 group"
+                >
+                  <svg class="h-5 w-5 mr-2 text-slate-200 fill-current transition-transform duration-300 group-hover:scale-105" viewBox="0 0 24 24">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.137 20.162 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
+                  </svg>
+                  GitHub
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div class="relative my-6">
+                <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                  <div class="w-full border-t border-dark-border"></div>
+                </div>
+                <div class="relative flex justify-center text-xs uppercase">
+                  <span class="bg-dark-bg px-4 text-slate-500 font-medium">Or continue with</span>
+                </div>
+              </div>
+
+              {/* Auth Form */}
+              <form onSubmit={handleSubmit} class="space-y-4">
+                
+                {/* Full Name input (Signup only) */}
+                {!isLogin && (
+                  <div class="animate-slide-up">
+                    <FloatingInput
+                      id="name"
+                      label="Full Name"
+                      type="text"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      icon={
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      }
+                    />
+                  </div>
+                )}
+
+                {/* Email Input */}
+                <FloatingInput
+                  id="email"
+                  label="Email Address"
+                  type="email"
+                  autocomplete="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  icon={
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  }
+                />
+
+                {/* Password Input */}
+                <div>
+                  <FloatingInput
+                    id="password"
+                    label="Password"
+                    type="password"
+                    autocomplete={isLogin ? "current-password" : "new-password"}
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    icon={
+                      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    }
+                  />
+                  
+                  {/* Password Strength Indicator (Signup only) */}
+                  {!isLogin && formData.password.length > 0 && (
+                    <div class="mt-2 animate-slide-up">
+                      <div class="h-1 w-full bg-dark-border rounded-full overflow-hidden mb-1 flex">
+                        <div
+                          class={`h-full transition-all duration-500 ${getStrengthStyles().color}`}
+                          style={{ width: getStrengthStyles().width }}
+                        ></div>
+                      </div>
+                      <div class="flex justify-between items-center text-[10px]">
+                        <span class="text-slate-500">Security check</span>
+                        <span class={`font-semibold ${passwordStrength >= 3 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {getStrengthStyles().text}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Additional Controls */}
+                {isLogin ? (
+                  <div class="flex items-center justify-between text-sm py-1">
+                    <label class="flex items-center space-x-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        class="rounded border-dark-border text-brand-500 focus:ring-brand-500 bg-dark-cardMuted h-4 w-4"
+                      />
+                      <span class="text-slate-400 text-xs">Remember me</span>
+                    </label>
+                    <a href="#" class="text-xs text-brand-400 hover:text-brand-300 font-medium transition-colors">
+                      Forgot Password?
+                    </a>
+                  </div>
+                ) : (
+                  <div class="flex items-start text-xs py-1">
+                    <label class="flex items-center space-x-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        name="agreeToTerms"
+                        checked={formData.agreeToTerms}
+                        onChange={handleInputChange}
+                        required
+                        class="rounded border-dark-border text-brand-500 focus:ring-brand-500 bg-dark-cardMuted h-4 w-4 mt-0.5"
+                      />
+                      <span class="text-slate-400 leading-tight">
+                        I agree to the <a href="#" class="text-brand-400 hover:underline">Terms of Service</a> and <a href="#" class="text-brand-400 hover:underline">Privacy Policy</a>
+                      </span>
+                    </label>
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  class="w-full relative py-3 px-4 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-semibold rounded-xl focus:outline-none transition-all duration-300 shadow-lg shadow-brand-500/20 active:scale-[0.99] disabled:opacity-50 overflow-hidden flex items-center justify-center"
+                >
+                  {isLoading ? (
+                    <div class="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <span>{isLogin ? 'Sign In' : 'Get Started'}</span>
+                  )}
+                </button>
+
+              </form>
+
+              {/* Form Switcher */}
+              <div class="mt-8 text-center text-sm">
+                <span class="text-slate-500">
+                  {isLogin ? "New to CreatorIQ? " : "Already have an account? "}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLogin(!isLogin);
+                    setErrorMsg('');
+                    setSuccessMsg('');
+                  }}
+                  class="font-semibold text-brand-400 hover:text-brand-300 transition-colors"
+                >
+                  {isLogin ? 'Create an account' : 'Sign in instead'}
+                </button>
+              </div>
+
+              {/* Demo Hint Box */}
+              {isLogin && (
+                <div class="mt-8 p-3.5 bg-brand-500/5 border border-brand-500/10 rounded-xl text-center">
+                  <p class="text-[11px] text-slate-500 leading-relaxed">
+                    💡 <span class="font-medium text-slate-400">Demo Sign In credentials:</span> <br/>
+                    Email: <span class="font-semibold text-brand-300">admin@creatoriq.com</span> | Password: <span class="font-semibold text-brand-300">Password123!</span>
+                  </p>
+                </div>
+              )}
+
+            </div>
+          </div>
+
+        </div>
+      );
+    }
+
+    // Render the App
+    const rootElement = document.getElementById('root');
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(<App />);
+  </script>
+</body>
+</html>
