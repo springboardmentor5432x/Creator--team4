@@ -79,7 +79,7 @@ export default function AuthForm() {
     const initGoogleOAuth = () => {
       if (window.google) {
         window.google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '543419358241-p6lgr1b79p1h1c3132e44q3e32e31e3b.apps.googleusercontent.com',
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '720768726643-86jl50qr50n4ftrd3r72g1qq04vr1b7b.apps.googleusercontent.com',
           callback: handleCredentialResponse
         });
         

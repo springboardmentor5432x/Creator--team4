@@ -7,6 +7,8 @@ from django.views.decorators.csrf import csrf_exempt
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from django.utils.crypto import get_random_string
+import requests
+
 
 from accounts.jwt_utils import generate_jwt, verify_jwt
 from accounts.models import UserProfile
@@ -255,3 +257,133 @@ def update_user_role_view(request):
 
 def health_check(request):
     return JsonResponse({'status': 'healthy', 'service': 'CreatorIQ Django API'})
+
+@csrf_exempt
+def youtube_channel_analytics(request):
+    """
+    Fetches live statistics and recent videos for a YouTube channel.
+    Accepts query parameter:
+      q: channel name/handle search query, OR
+      channel_id: exact YouTube channel ID.
+    """
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Only GET method is allowed'}, status=405)
+
+    api_key = os.getenv('YOUTUBE_API_KEY')
+    if not api_key:
+        return JsonResponse({'error': 'YouTube API Key is not configured on the backend.'}, status=500)
+
+    q = request.GET.get('q', '').strip()
+    channel_id = request.GET.get('channel_id', '').strip()
+
+    if not q and not channel_id:
+        return JsonResponse({'error': 'Either "q" or "channel_id" parameter is required.'}, status=400)
+
+    try:
+        # Step 1: If q is provided and not channel_id, search for the channel ID
+        if q and not channel_id:
+            search_url = 'https://www.googleapis.com/youtube/v3/search'
+            search_params = {
+                'part': 'snippet',
+                'type': 'channel',
+                'q': q,
+                'maxResults': 1,
+                'key': api_key
+            }
+            res = requests.get(search_url, params=search_params, timeout=5)
+            if res.status_code != 200:
+                return JsonResponse({'error': f'YouTube search API error: {res.text}'}, status=res.status_code)
+            
+            search_data = res.json()
+            items = search_data.get('items', [])
+            if not items:
+                return JsonResponse({'error': f'No channel found matching "{q}"'}, status=404)
+            
+            channel_id = items[0]['id']['channelId']
+
+        # Step 2: Fetch channel details and stats
+        channel_url = 'https://www.googleapis.com/youtube/v3/channels'
+        channel_params = {
+            'part': 'snippet,statistics,brandingSettings',
+            'id': channel_id,
+            'key': api_key
+        }
+        res = requests.get(channel_url, params=channel_params, timeout=5)
+        if res.status_code != 200:
+            return JsonResponse({'error': f'YouTube channels API error: {res.text}'}, status=res.status_code)
+
+        channel_data = res.json()
+        channel_items = channel_data.get('items', [])
+        if not channel_items:
+            return JsonResponse({'error': 'Channel details not found.'}, status=404)
+
+        channel_item = channel_items[0]
+        snippet = channel_item.get('snippet', {})
+        stats = channel_item.get('statistics', {})
+        branding = channel_item.get('brandingSettings', {})
+        
+        channel_info = {
+            'id': channel_id,
+            'title': snippet.get('title', ''),
+            'handle': snippet.get('customUrl', ''),
+            'description': snippet.get('description', ''),
+            'thumbnail': snippet.get('thumbnails', {}).get('medium', {}).get('url', ''),
+            'banner': branding.get('image', {}).get('bannerExternalUrl', ''),
+            'subscribers': int(stats.get('subscriberCount', 0)),
+            'views': int(stats.get('viewCount', 0)),
+            'videos': int(stats.get('videoCount', 0)),
+        }
+
+        # Step 3: Fetch 5 recent videos
+        videos_search_url = 'https://www.googleapis.com/youtube/v3/search'
+        videos_search_params = {
+            'part': 'snippet',
+            'channelId': channel_id,
+            'order': 'date',
+            'type': 'video',
+            'maxResults': 5,
+            'key': api_key
+        }
+        res = requests.get(videos_search_url, params=videos_search_params, timeout=5)
+        recent_videos = []
+        
+        if res.status_code == 200:
+            video_items = res.json().get('items', [])
+            video_ids = [item['id']['videoId'] for item in video_items if item.get('id', {}).get('videoId')]
+            
+            if video_ids:
+                # Step 4: Fetch detailed video statistics
+                videos_url = 'https://www.googleapis.com/youtube/v3/videos'
+                videos_params = {
+                    'part': 'snippet,statistics',
+                    'id': ','.join(video_ids),
+                    'key': api_key
+                }
+                v_res = requests.get(videos_url, params=videos_params, timeout=5)
+                if v_res.status_code == 200:
+                    v_items = v_res.json().get('items', [])
+                    v_stats_map = {item['id']: item for item in v_items}
+                    
+                    for v_id in video_ids:
+                        if v_id in v_stats_map:
+                            v_item = v_stats_map[v_id]
+                            v_snippet = v_item.get('snippet', {})
+                            v_stats = v_item.get('statistics', {})
+                            recent_videos.append({
+                                'id': v_id,
+                                'title': v_snippet.get('title', ''),
+                                'publishedAt': v_snippet.get('publishedAt', ''),
+                                'thumbnail': v_snippet.get('thumbnails', {}).get('medium', {}).get('url', ''),
+                                'views': int(v_stats.get('viewCount', 0)),
+                                'likes': int(v_stats.get('likeCount', 0)),
+                                'comments': int(v_stats.get('commentCount', 0))
+                            })
+
+        return JsonResponse({
+            'channel': channel_info,
+            'videos': recent_videos
+        })
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+

@@ -24,6 +24,10 @@ async function request(path, options = {}) {
   const data = await res.json();
 
   if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.removeItem('creatoriq_user');
+      localStorage.removeItem('creatoriq_token');
+    }
     throw new Error(data.error || `Request failed with status ${res.status}`);
   }
 
@@ -61,4 +65,21 @@ export const api = {
     }),
 
   health: () => request('/health'),
+  getYoutubeChannel: (query, channelId = '') => {
+    const url = channelId 
+      ? `/youtube/channel/?channel_id=${encodeURIComponent(channelId)}`
+      : `/youtube/channel/?q=${encodeURIComponent(query)}`;
+    return request(url, { method: 'GET' });
+  },
+
+  connectYoutube: (channelId, channelTitle) =>
+    request('/users/connect-youtube/', {
+      method: 'POST',
+      body: JSON.stringify({ channelId, channelTitle }),
+    }),
+
+  disconnectYoutube: () =>
+    request('/users/disconnect-youtube/', {
+      method: 'POST',
+    }),
 };

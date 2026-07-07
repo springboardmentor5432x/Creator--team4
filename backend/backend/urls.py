@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.urls import path
 from django.http import HttpResponse
 from pathlib import Path
-from accounts.views import register_view, login_view, google_login_view, list_users_view, update_user_role_view, health_check
+from accounts.views import register_view, login_view, google_login_view, list_users_view, update_user_role_view, health_check, youtube_channel_analytics
 
 def serve_frontend(request):
     """Serve the React SPA without Django template processing (avoids JSX conflict)."""
@@ -24,6 +24,7 @@ urlpatterns = [
     path('api/users/', list_users_view, name='api_list_users'),
     path('api/users/update-role/', update_user_role_view, name='api_update_user_role'),
     path('api/health', health_check, name='api_health'),
+    path('api/youtube/channel/', youtube_channel_analytics, name='api_youtube_channel'),
     
     # Serve React SPA Frontend (raw file, not Django template)
     path('', serve_frontend, name='frontend'),

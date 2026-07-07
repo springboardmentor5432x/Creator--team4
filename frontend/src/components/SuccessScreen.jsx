@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
+import Dashboard from './Dashboard';
+
 
 /**
  * SuccessScreen — shown after successful login.
@@ -10,12 +12,19 @@ export default function SuccessScreen({ user, onLogout }) {
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [updatingUserId, setUpdatingUserId] = useState(null);
+  const [showDashboard, setShowDashboard] = useState(false);
+
 
   useEffect(() => {
     if (isAdmin) {
       fetchUsers();
     }
   }, [user, isAdmin]);
+
+  if (showDashboard) {
+    return <Dashboard user={user} onBack={() => setShowDashboard(false)} />;
+  }
+
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
@@ -127,32 +136,55 @@ export default function SuccessScreen({ user, onLogout }) {
             </div>
           </div>
 
-          <button
-            onClick={onLogout}
-            style={{
-              padding: '0.6rem 1.2rem',
-              background: 'transparent',
-              border: '1px solid var(--border-color)',
-              color: 'var(--text-secondary)',
-              fontWeight: 600,
-              borderRadius: '0.75rem',
-              cursor: 'pointer',
-              fontSize: '0.85rem',
-              transition: 'all 0.2s',
-              fontFamily: 'inherit',
-              flexShrink: 0,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--brand-500)';
-              e.currentTarget.style.color = 'var(--text-primary)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border-color)';
-              e.currentTarget.style.color = 'var(--text-secondary)';
-            }}
-          >
-            Sign Out
-          </button>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexShrink: 0 }}>
+            {isAdmin && (
+              <button
+                onClick={() => setShowDashboard(true)}
+                style={{
+                  padding: '0.6rem 1.2rem',
+                  background: 'linear-gradient(to right, var(--brand-600), var(--indigo-600))',
+                  border: 'none',
+                  color: '#fff',
+                  fontWeight: 600,
+                  borderRadius: '0.75rem',
+                  cursor: 'pointer',
+                  fontSize: '0.85rem',
+                  transition: 'all 0.2s',
+                  fontFamily: 'inherit',
+                  boxShadow: '0 4px 15px rgba(139,92,246,0.15)',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+              >
+                Enter Workspace
+              </button>
+            )}
+            <button
+              onClick={onLogout}
+              style={{
+                padding: '0.6rem 1.2rem',
+                background: 'transparent',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-secondary)',
+                fontWeight: 600,
+                borderRadius: '0.75rem',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                transition: 'all 0.2s',
+                fontFamily: 'inherit',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--brand-500)';
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color)';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }}
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
 
         {/* ========================================================
@@ -331,7 +363,7 @@ export default function SuccessScreen({ user, onLogout }) {
 
             {/* Workspace action */}
             <button
-              onClick={() => alert('Dashboard Analytics will load in the next milestone!')}
+              onClick={() => setShowDashboard(true)}
               style={{
                 width: '100%',
                 padding: '0.875rem 1rem',
