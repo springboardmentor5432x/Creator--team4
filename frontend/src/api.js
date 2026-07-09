@@ -82,4 +82,17 @@ export const api = {
     request('/users/disconnect-youtube/', {
       method: 'POST',
     }),
+
+  getConfig: () => request('/config/'),
+
+  connectLinkedin: (code, redirectUri) =>
+    request('/users/connect-linkedin/', {
+      method: 'POST',
+      body: JSON.stringify({ code, redirectUri }),
+    }),
+
+  disconnectLinkedin: () =>
+    request('/users/disconnect-linkedin/', {
+      method: 'POST',
+    }),
 };

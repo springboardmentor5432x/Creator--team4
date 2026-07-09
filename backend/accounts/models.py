@@ -12,6 +12,16 @@ class UserProfile(models.Model):
     ]
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role = models.CharField(max_length=50, choices=ROLE_CHOICES, default='Creator')
+    youtube_channel_id = models.CharField(max_length=255, blank=True, null=True)
+    youtube_channel_title = models.CharField(max_length=255, blank=True, null=True)
+    linkedin_profile_id = models.CharField(max_length=255, blank=True, null=True)
+    linkedin_profile_title = models.CharField(max_length=255, blank=True, null=True)
+    linkedin_profile_picture = models.CharField(max_length=1000, blank=True, null=True)
+    linkedin_profile_banner = models.CharField(max_length=1000, blank=True, null=True)
+    linkedin_connections_count = models.IntegerField(default=0)
+    linkedin_profile_views = models.IntegerField(default=0)
+    linkedin_post_impressions = models.IntegerField(default=0)
+    linkedin_search_appearances = models.IntegerField(default=0)
 
     def __str__(self):
         return f"{self.user.username} - {self.role}"

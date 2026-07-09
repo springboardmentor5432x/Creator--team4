@@ -19,6 +19,23 @@ export default function FloatingInput({
 
   return (
     <div style={{ position: 'relative', marginBottom: '1.25rem' }}>
+      <style>{`
+        /* Float the label when input is focused, has value (not showing placeholder), or is autofilled */
+        .floating-input-field:focus ~ .floating-label,
+        .floating-input-field:not(:placeholder-shown) ~ .floating-label,
+        .floating-input-field:-webkit-autofill ~ .floating-label {
+          top: -0.55rem !important;
+          font-size: 0.65rem !important;
+          font-weight: 600 !important;
+          color: var(--brand-400) !important;
+          background: var(--card-bg) !important;
+          padding: 0 0.375rem !important;
+          border-radius: 0.25rem !important;
+          letter-spacing: 0.02em !important;
+          z-index: 3 !important;
+        }
+      `}</style>
+
       {/* Leading Icon */}
       <div
         style={{
@@ -47,7 +64,8 @@ export default function FloatingInput({
         onChange={onChange}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        placeholder="" // Keep placeholder empty to avoid overlapping text
+        placeholder=" " // Set to space to enable CSS not(:placeholder-shown) checking
+        className="floating-input-field"
         style={{
           display: 'block',
           width: '100%',
@@ -78,6 +96,7 @@ export default function FloatingInput({
       {/* Floating Label */}
       <label
         htmlFor={id}
+        className="floating-label"
         style={{
           position: 'absolute',
           left: '2.5rem',

@@ -269,19 +269,20 @@ export default function SuccessScreen({ user, onLogout }) {
                             )}
                             <select
                               value={u.role}
-                              disabled={updatingUserId !== null}
+                              disabled={updatingUserId !== null || u.email === user.email}
                               onChange={(e) => handleRoleChange(u.id, e.target.value)}
                               style={{
                                 padding: '0.375rem 0.75rem',
-                                background: 'var(--card-bg)',
+                                background: u.email === user.email ? 'var(--card-muted-bg)' : 'var(--card-bg)',
                                 border: '1px solid var(--border-color)',
-                                color: 'var(--text-primary)',
+                                color: u.email === user.email ? 'var(--text-muted)' : 'var(--text-primary)',
                                 borderRadius: '0.5rem',
                                 outline: 'none',
                                 fontSize: '0.8rem',
-                                cursor: 'pointer',
+                                cursor: u.email === user.email ? 'not-allowed' : 'pointer',
                                 fontFamily: 'inherit'
                               }}
+                              title={u.email === user.email ? "You cannot modify your own administrator role to prevent lockouts." : "Change user workspace permissions"}
                             >
                               <option value="Creator">Creator</option>
                               <option value="Agency">Agency</option>

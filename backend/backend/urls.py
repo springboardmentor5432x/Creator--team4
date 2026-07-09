@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.urls import path
 from django.http import HttpResponse
 from pathlib import Path
-from accounts.views import register_view, login_view, google_login_view, list_users_view, update_user_role_view, health_check, youtube_channel_analytics
+from accounts.views import register_view, login_view, google_login_view, list_users_view, update_user_role_view, health_check, youtube_channel_analytics, connect_youtube_view, disconnect_youtube_view, get_config, linkedin_connect_view, linkedin_disconnect_view
 
 def serve_frontend(request):
     """Serve the React SPA without Django template processing (avoids JSX conflict)."""
@@ -23,6 +23,11 @@ urlpatterns = [
     path('api/google-login/', google_login_view, name='api_google_login'),
     path('api/users/', list_users_view, name='api_list_users'),
     path('api/users/update-role/', update_user_role_view, name='api_update_user_role'),
+    path('api/users/connect-youtube/', connect_youtube_view, name='api_connect_youtube'),
+    path('api/users/disconnect-youtube/', disconnect_youtube_view, name='api_disconnect_youtube'),
+    path('api/users/connect-linkedin/', linkedin_connect_view, name='api_connect_linkedin'),
+    path('api/users/disconnect-linkedin/', linkedin_disconnect_view, name='api_disconnect_linkedin'),
+    path('api/config/', get_config, name='api_config'),
     path('api/health', health_check, name='api_health'),
     path('api/youtube/channel/', youtube_channel_analytics, name='api_youtube_channel'),
     
