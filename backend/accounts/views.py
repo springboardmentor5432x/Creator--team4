@@ -88,6 +88,7 @@ def register_view(request):
                 'youtube_channel_title': user.profile.youtube_channel_title if hasattr(user, 'profile') else None,
                 'linkedin_profile_id': user.profile.linkedin_profile_id if hasattr(user, 'profile') else None,
                 'linkedin_profile_title': user.profile.linkedin_profile_title if hasattr(user, 'profile') else None,
+                'linkedin_profile_headline': user.profile.linkedin_profile_headline if hasattr(user, 'profile') else None,
                 'linkedin_profile_picture': user.profile.linkedin_profile_picture if hasattr(user, 'profile') else None,
                 'linkedin_profile_banner': user.profile.linkedin_profile_banner if hasattr(user, 'profile') else None,
                 'linkedin_connections_count': user.profile.linkedin_connections_count if hasattr(user, 'profile') else 0,
@@ -134,6 +135,7 @@ def login_view(request):
                     'youtube_channel_title': user.profile.youtube_channel_title if hasattr(user, 'profile') else None,
                     'linkedin_profile_id': user.profile.linkedin_profile_id if hasattr(user, 'profile') else None,
                     'linkedin_profile_title': user.profile.linkedin_profile_title if hasattr(user, 'profile') else None,
+                    'linkedin_profile_headline': user.profile.linkedin_profile_headline if hasattr(user, 'profile') else None,
                     'linkedin_profile_picture': user.profile.linkedin_profile_picture if hasattr(user, 'profile') else None,
                     'linkedin_profile_banner': user.profile.linkedin_profile_banner if hasattr(user, 'profile') else None,
                     'linkedin_connections_count': user.profile.linkedin_connections_count if hasattr(user, 'profile') else 0,
@@ -208,6 +210,7 @@ def google_login_view(request):
                     'youtube_channel_title': user.profile.youtube_channel_title if hasattr(user, 'profile') else None,
                     'linkedin_profile_id': user.profile.linkedin_profile_id if hasattr(user, 'profile') else None,
                     'linkedin_profile_title': user.profile.linkedin_profile_title if hasattr(user, 'profile') else None,
+                    'linkedin_profile_headline': user.profile.linkedin_profile_headline if hasattr(user, 'profile') else None,
                     'linkedin_profile_picture': user.profile.linkedin_profile_picture if hasattr(user, 'profile') else None,
                     'linkedin_profile_banner': user.profile.linkedin_profile_banner if hasattr(user, 'profile') else None,
                     'linkedin_connections_count': user.profile.linkedin_connections_count if hasattr(user, 'profile') else 0,
@@ -1007,6 +1010,74 @@ def linkedin_connect_view(request):
         if not code or not redirect_uri:
             return JsonResponse({'error': 'code and redirectUri are required'}, status=400)
             
+        if code == 'simulated' or code.startswith('simulated_'):
+            # Bypass real LinkedIn token exchange, return mock data directly!
+            # Extract email if passed as simulated_{encoded_email}
+            linkedin_email = None
+            if code.startswith('simulated_') and len(code) > 10:
+                try:
+                    from urllib.parse import unquote
+                    linkedin_email = unquote(code[10:])  # Strip 'simulated_' prefix and decode
+                except Exception:
+                    pass
+            
+            linkedin_id = "simulated_li_" + str(user.id)
+            
+            # Name priority: 1) Django first+last name 2) Email username parsing
+            if user.first_name or user.last_name:
+                linkedin_name = (user.first_name + " " + user.last_name).strip()
+            elif linkedin_email and '@' in linkedin_email:
+                raw_name = linkedin_email.split('@')[0]
+                # Convert dot/underscore/hyphen separators into title case name
+                import re
+                parts = re.split(r'[._\-]+', raw_name)
+                linkedin_name = ' '.join(p.capitalize() for p in parts if p)
+            else:
+                linkedin_name = user.email.split("@")[0].capitalize() if user.email else "LinkedIn User"
+            
+            # Use UI Avatars so the profile picture shows the user's actual initials
+            from urllib.parse import quote as url_quote
+            encoded_name = url_quote(linkedin_name)
+            linkedin_picture = f"https://ui-avatars.com/api/?name={encoded_name}&size=256&background=0077b5&color=ffffff&bold=true&font-size=0.4&rounded=true"
+            # Professional LinkedIn-style gradient banner (dark blue)
+            linkedin_banner = "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&h=300&q=80"
+                      # Save to UserProfile
+            profile, created = UserProfile.objects.get_or_create(user=user)
+            
+            # Professional LinkedIn Headline Mock based on workspace role
+            if profile.role == 'Administrator':
+                linkedin_headline = "System Administrator / IT Operations"
+            elif profile.role == 'Creator':
+                linkedin_headline = "Content Creator / Professional Educator"
+            elif profile.role == 'Agency':
+                linkedin_headline = "Agency Director / Brand Partnerships Specialist"
+            else:
+                linkedin_headline = "Marketing Specialist / Brand Strategist"
+
+            profile.linkedin_profile_id = linkedin_id
+            profile.linkedin_profile_title = linkedin_name
+            profile.linkedin_profile_headline = linkedin_headline
+            profile.linkedin_profile_picture = linkedin_picture
+            profile.linkedin_profile_banner = linkedin_banner
+            profile.linkedin_connections_count = 1420
+            profile.linkedin_profile_views = 358
+            profile.linkedin_post_impressions = 8900
+            profile.linkedin_search_appearances = 112
+            profile.save()
+            
+            return JsonResponse({
+                'message': 'LinkedIn profile connected successfully (Simulated)',
+                'linkedin_profile_id': profile.linkedin_profile_id,
+                'linkedin_profile_title': profile.linkedin_profile_title,
+                'linkedin_profile_headline': profile.linkedin_profile_headline,
+                'linkedin_profile_picture': profile.linkedin_profile_picture,
+                'linkedin_profile_banner': profile.linkedin_profile_banner,
+                'linkedin_connections_count': profile.linkedin_connections_count,
+                'linkedin_profile_views': profile.linkedin_profile_views,
+                'linkedin_post_impressions': profile.linkedin_post_impressions,
+                'linkedin_search_appearances': profile.linkedin_search_appearances,
+            })
+
         client_id = os.getenv('LINKEDIN_CLIENT_ID')
         client_secret = os.getenv('LINKEDIN_CLIENT_SECRET')
         
@@ -1032,6 +1103,7 @@ def linkedin_connect_view(request):
         linkedin_id = None
         linkedin_name = None
         linkedin_picture = None
+        linkedin_headline = "LinkedIn Professional Profile"
         
         # 2. Extract profile details from id_token if present (local decode, fast & bypasses API sync delays)
         if id_token:
@@ -1044,6 +1116,28 @@ def linkedin_connect_view(request):
             except Exception as jwt_err:
                 print(f"[LINKEDIN] OIDC JWT decode error: {jwt_err}")
                 
+        # Try to get profile details & headline from /v2/me API
+        try:
+            me_url = 'https://api.linkedin.com/v2/me'
+            me_headers = {'Authorization': f'Bearer {access_token}'}
+            me_res = requests.get(me_url, headers=me_headers, timeout=10)
+            if me_res.status_code == 200:
+                me_data = me_res.json()
+                linkedin_id = linkedin_id or me_data.get('id')
+                # Try to get localized name
+                first_name = me_data.get('localizedFirstName', '')
+                last_name = me_data.get('localizedLastName', '')
+                if first_name or last_name:
+                    linkedin_name = f"{first_name} {last_name}".strip()
+                
+                # Fetch headline
+                headline_data = me_data.get('headline', {})
+                localized = headline_data.get('localized', {})
+                if localized:
+                    linkedin_headline = next(iter(localized.values()), linkedin_headline)
+        except Exception as e:
+            print(f"[LINKEDIN] me profile fetch error: {e}")
+
         # Fallback to UserInfo endpoint if id_token details are incomplete or missing
         if not linkedin_id or not linkedin_name:
             userinfo_url = 'https://api.linkedin.com/v2/userinfo'
@@ -1064,6 +1158,7 @@ def linkedin_connect_view(request):
         profile, created = UserProfile.objects.get_or_create(user=user)
         profile.linkedin_profile_id = linkedin_id
         profile.linkedin_profile_title = linkedin_name or 'LinkedIn User'
+        profile.linkedin_profile_headline = linkedin_headline
         if linkedin_picture:
             profile.linkedin_profile_picture = linkedin_picture
         profile.save()
@@ -1072,6 +1167,7 @@ def linkedin_connect_view(request):
             'message': 'LinkedIn profile connected successfully',
             'linkedin_profile_id': profile.linkedin_profile_id,
             'linkedin_profile_title': profile.linkedin_profile_title,
+            'linkedin_profile_headline': profile.linkedin_profile_headline,
             'linkedin_profile_picture': profile.linkedin_profile_picture,
             'linkedin_profile_banner': profile.linkedin_profile_banner,
             'linkedin_connections_count': profile.linkedin_connections_count,
@@ -1081,7 +1177,7 @@ def linkedin_connect_view(request):
         })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=401 if 'credentials' in str(e) or 'Token' in str(e) else 500)
-
+ 
 @csrf_exempt
 def linkedin_disconnect_view(request):
     if request.method != 'POST':
@@ -1092,6 +1188,7 @@ def linkedin_disconnect_view(request):
         profile, created = UserProfile.objects.get_or_create(user=user)
         profile.linkedin_profile_id = None
         profile.linkedin_profile_title = None
+        profile.linkedin_profile_headline = None
         profile.save()
         
         return JsonResponse({'message': 'LinkedIn profile disconnected successfully'})

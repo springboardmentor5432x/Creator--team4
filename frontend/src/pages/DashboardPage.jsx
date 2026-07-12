@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../api';
 
 export default function Dashboard({ user, onBack }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const currentPath = location.pathname;
   // Sync state with localStorage cache to support cross-page navigation persistence
   const [connectedChannelId, setConnectedChannelId] = useState(() => {
     try {
@@ -51,6 +55,16 @@ export default function Dashboard({ user, onBack }) {
       }
     } catch (e) {}
     return user.linkedin_profile_title || null;
+  });
+
+  const [connectedLinkedinHeadline, setConnectedLinkedinHeadline] = useState(() => {
+    try {
+      const stored = localStorage.getItem('creatoriq_user');
+      if (stored) {
+        return JSON.parse(stored).linkedin_profile_headline || null;
+      }
+    } catch (e) {}
+    return user.linkedin_profile_headline || null;
   });
 
   const [connectedLinkedinConnections, setConnectedLinkedinConnections] = useState(() => {
@@ -121,13 +135,16 @@ export default function Dashboard({ user, onBack }) {
     return user.linkedin_profile_banner || null;
   });
 
-  const [activeTab, setActiveTab] = useState('youtube');
+  const activeTab = ['/youtube', '/instagram', '/facebook', '/linkedin'].includes(currentPath) ? currentPath.substring(1) : 'youtube';
   const [publicMode, setPublicMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('mrbeast');
   const [ytData, setYtData] = useState(null);
   const [connectedYtData, setConnectedYtData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // LinkedIn connecting state
+  const [liConnecting, setLiConnecting] = useState(false);
 
   // Onboarding Channel search states
   const [onboardingQuery, setOnboardingQuery] = useState('');
@@ -239,27 +256,27 @@ export default function Dashboard({ user, onBack }) {
     }
   };
 
-  // Connect LinkedIn Profile via OAuth
+  // Connect LinkedIn — Redirects user to real LinkedIn Login page
   const handleConnectLinkedin = async () => {
-    setLoading(true);
+    setLiConnecting(true);
     setError('');
     try {
+      // Get the configured LinkedIn Client ID from Django config view
       const config = await api.getConfig();
       const clientId = config.linkedin_client_id;
+      
       if (!clientId) {
-        throw new Error('LinkedIn Client ID is not configured on the backend.');
+        throw new Error('LinkedIn Client ID is not configured on the server. Please check your backend .env file.');
       }
       
       const redirectUri = window.location.origin;
-      const state = 'linkedin_' + Math.random().toString(36).substring(2, 15);
-      const scope = 'openid profile email';
+      const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=creatoriq_li_connect&scope=openid%20profile%20email`;
       
-      const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=${encodeURIComponent(scope)}`;
-      
+      // Redirect to LinkedIn OAuth
       window.location.href = authUrl;
     } catch (err) {
-      setError(err.message || 'Failed to initiate LinkedIn connection.');
-      setLoading(false);
+      setError('Failed to initiate LinkedIn connection: ' + err.message);
+      setLiConnecting(false);
     }
   };
 
@@ -277,6 +294,7 @@ export default function Dashboard({ user, onBack }) {
           const u = JSON.parse(stored);
           u.linkedin_profile_id = null;
           u.linkedin_profile_title = null;
+          u.linkedin_profile_headline = null;
           u.linkedin_profile_picture = null;
           u.linkedin_profile_banner = null;
           u.linkedin_connections_count = 0;
@@ -289,6 +307,7 @@ export default function Dashboard({ user, onBack }) {
 
       setConnectedLinkedinId(null);
       setConnectedLinkedinTitle(null);
+      setConnectedLinkedinHeadline(null);
       setConnectedLinkedinPicture(null);
       setConnectedLinkedinBanner(null);
       setConnectedLinkedinConnections(0);
@@ -306,9 +325,11 @@ export default function Dashboard({ user, onBack }) {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
-    if (code) {
-      // Switch tab to LinkedIn so the user sees the linking result
-      setActiveTab('linkedin');
+    const state = urlParams.get('state');
+    if (code && state === 'creatoriq_li_connect') {
+      // Clean up URL query parameters immediately to prevent double-processing in React StrictMode
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
       setLoading(true);
       setError('');
       
@@ -324,6 +345,7 @@ export default function Dashboard({ user, onBack }) {
               const u = JSON.parse(stored);
               u.linkedin_profile_id = data.linkedin_profile_id;
               u.linkedin_profile_title = data.linkedin_profile_title;
+              u.linkedin_profile_headline = data.linkedin_profile_headline;
               u.linkedin_profile_picture = data.linkedin_profile_picture;
               u.linkedin_profile_banner = data.linkedin_profile_banner;
               u.linkedin_connections_count = data.linkedin_connections_count;
@@ -336,15 +358,13 @@ export default function Dashboard({ user, onBack }) {
 
           setConnectedLinkedinId(data.linkedin_profile_id);
           setConnectedLinkedinTitle(data.linkedin_profile_title);
+          setConnectedLinkedinHeadline(data.linkedin_profile_headline || null);
           setConnectedLinkedinPicture(data.linkedin_profile_picture || null);
           setConnectedLinkedinBanner(data.linkedin_profile_banner || null);
           setConnectedLinkedinConnections(data.linkedin_connections_count || 0);
           setConnectedLinkedinViews(data.linkedin_profile_views || 0);
           setConnectedLinkedinImpressions(data.linkedin_post_impressions || 0);
           setConnectedLinkedinAppearances(data.linkedin_search_appearances || 0);
-          
-          // Clean up URL query parameters
-          window.history.replaceState({}, document.title, window.location.pathname);
         } catch (err) {
           setError('Failed to connect LinkedIn profile: ' + err.message);
         } finally {
@@ -494,12 +514,12 @@ export default function Dashboard({ user, onBack }) {
             {[
               { id: 'youtube', label: 'YouTube', color: '#ff0000', svg: <path fill="#ff0000" d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.518 3.545 12 3.545 12 3.545s-7.518 0-9.388.507a3.003 3.003 0 0 0-2.11 2.11C0 8.033 0 12 0 12s0 3.967.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.87.507 9.388.507 9.388.507s7.518 0 9.388-.507a3.003 3.003 0 0 0 2.11-2.11C24 15.967 24 12 24 12s0-3.967-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/> },
               { id: 'instagram', label: 'Instagram', color: '#e1306c', svg: <path fill="#e1306c" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/> },
-              { id: 'tiktok', label: 'TikTok', color: '#00f2fe', svg: <path fill="#fff" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.86-.74-3.94-1.74-.22-.2-.43-.43-.62-.67-.02 3.22-.01 6.44-.02 9.65-.07 2.44-1.24 4.84-3.29 6.13-2.18 1.4-5.09 1.61-7.42.59-2.45-1.04-4.14-3.52-4.09-6.22.04-2.68 1.83-5.19 4.43-5.91 1-.29 2.07-.33 3.1-.11v4.18c-.89-.25-1.89-.17-2.71.32-.97.55-1.52 1.66-1.47 2.77.03 1.09.7 2.11 1.69 2.58.98.48 2.19.4 3.07-.22.84-.57 1.25-1.58 1.22-2.58.01-4.71.01-9.41.01-14.12z"/> },
+              { id: 'facebook', label: 'Facebook', color: '#1877f2', svg: <path fill="#1877f2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/> },
               { id: 'linkedin', label: 'LinkedIn', color: '#0077b5', svg: <path fill="#0077b5" d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/> }
             ].map(tab => (
               <button
                 key={tab.id}
-                onClick={() => { setActiveTab(tab.id); setError(''); }}
+                onClick={() => { navigate('/' + tab.id); setError(''); }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -581,7 +601,7 @@ export default function Dashboard({ user, onBack }) {
               e.currentTarget.style.color = 'var(--text-secondary)';
             }}
           >
-            ← Profile Manager
+            {user.role === 'Administrator' ? '← Admin Panel' : 'Sign Out'}
           </button>
         </div>
       </div>
@@ -1093,6 +1113,7 @@ export default function Dashboard({ user, onBack }) {
         )}
 
         {/* ==================== LINKEDIN TAB ==================== */}
+
         {activeTab === 'linkedin' && (
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', flexGrow: 1 }}>
             {!connectedLinkedinId ? (
@@ -1120,26 +1141,30 @@ export default function Dashboard({ user, onBack }) {
 
                 <button
                   onClick={handleConnectLinkedin}
-                  disabled={loading}
+                  disabled={liConnecting}
                   style={{
-                    background: 'var(--brand-500)',
+                    background: '#0077b5',
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: '0.75rem',
                     padding: '0.75rem 2rem',
                     fontWeight: 700,
-                    cursor: loading ? 'not-allowed' : 'pointer',
+                    cursor: liConnecting ? 'not-allowed' : 'pointer',
                     fontSize: '0.95rem',
-                    boxShadow: '0 4px 12px rgba(139,92,246,0.3)',
+                    boxShadow: '0 4px 12px rgba(0,119,181,0.35)',
                     transition: 'all 0.2s ease',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem'
+                    gap: '0.75rem',
+                    opacity: liConnecting ? 0.75 : 1
                   }}
-                  onMouseEnter={(e) => { if(!loading) e.currentTarget.style.background = 'var(--brand-600)'; }}
-                  onMouseLeave={(e) => { if(!loading) e.currentTarget.style.background = 'var(--brand-500)'; }}
+                  onMouseEnter={(e) => { if(!liConnecting) e.currentTarget.style.background = '#005c8e'; }}
+                  onMouseLeave={(e) => { if(!liConnecting) e.currentTarget.style.background = '#0077b5'; }}
                 >
-                  {loading ? 'Initializing OAuth...' : 'Connect LinkedIn Profile'}
+                  <svg style={{ width: '1.25rem', height: '1.25rem', fill: '#fff' }} viewBox="0 0 24 24">
+                    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                  </svg>
+                  {liConnecting ? 'Connecting...' : 'Sign in with LinkedIn'}
                 </button>
               </div>
             ) : (
@@ -1208,7 +1233,7 @@ export default function Dashboard({ user, onBack }) {
                           CONNECTED
                         </span>
                       </div>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>LinkedIn Professional Profile Analytics</p>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>{connectedLinkedinHeadline || 'LinkedIn Professional Profile Analytics'}</p>
                     </div>
                   </div>
 

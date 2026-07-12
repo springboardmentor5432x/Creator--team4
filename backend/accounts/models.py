@@ -16,6 +16,7 @@ class UserProfile(models.Model):
     youtube_channel_title = models.CharField(max_length=255, blank=True, null=True)
     linkedin_profile_id = models.CharField(max_length=255, blank=True, null=True)
     linkedin_profile_title = models.CharField(max_length=255, blank=True, null=True)
+    linkedin_profile_headline = models.CharField(max_length=500, blank=True, null=True)
     linkedin_profile_picture = models.CharField(max_length=1000, blank=True, null=True)
     linkedin_profile_banner = models.CharField(max_length=1000, blank=True, null=True)
     linkedin_connections_count = models.IntegerField(default=0)
