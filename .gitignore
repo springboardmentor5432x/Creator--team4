@@ -1,0 +1,15 @@
+# Python virtual environment
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Environment secrets
+.env
+.env.example
+test_db_connection.py
+test_mongo_insert.py
+
+# IDE
+.vscode/
+.idea/
