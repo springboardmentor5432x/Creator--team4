@@ -73,7 +73,7 @@ async def register(payload: UserRegisterRequest, db: AsyncSession = Depends(get_
     
 
     # Step 3: Persist the user
-    # TODO (Database Teammate): create_user inserts into users table, resolves role_id from roles table.
+    
     new_user = await create_user(
         db=db,
         full_name=payload.full_name,    # ← maps to users.full_name
