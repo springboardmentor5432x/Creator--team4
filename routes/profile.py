@@ -42,8 +42,11 @@ async def get_profile(
     """
     return UserPublicResponse(
         id=current_user.id,
-        username=current_user.username,
+        full_name=current_user.full_name,
         email=current_user.email,
+        phone_number=current_user.phone_number,
+        rid=current_user.role_id,
         role=current_user.role,
         is_active=current_user.is_active,
+        created_at=current_user.created_at,
     )

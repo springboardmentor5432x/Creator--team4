@@ -1,23 +1,27 @@
 """
-routes/agency.py — Agency-Only Endpoints
-
-All routes require the authenticated user to hold the `agency` role,
-EXCEPT where the Administrator override is also allowed (GET /profile).
+routes/agency.py — Agency Endpoints
 
 Endpoints:
-    GET  /api/agency/dashboard   — Agency dashboard summary (existing)
-    GET  /api/agency/profile     — Read agency profile     (Agency | Admin)
-    PUT  /api/agency/profile     — Update agency profile   (Agency only)
+    GET  /api/agency/dashboard   — Agency dashboard summary
+    GET  /api/agency/profile     — Read agency profile
+    PUT  /api/agency/profile     — Update agency profile
 
-Authorization dependency chain (handled automatically):
-    require_agency()             → JWT verified → role == "agency"
-    require_agency_or_admin()    → JWT verified → role in ["agency", "administrator"]
+Permission matrix applied:
+    creator:view   — Agency ✅ (full)
+    creator:update — Agency Own (managed creators only)
+    analytics:view — Agency ✅ (full)
+    campaign:*     — Agency ✅ (full)
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from authorization import require_agency, require_roles
-from roles import UserRole
+from authorization import (
+    require_any_permission,
+    require_permission,
+    get_access_level,
+    verify_ownership,
+)
+from permissions import Permission
 from schemas import UserInDB
 from schemas.agency import AgencyProfileRequest, AgencyProfileResponse
 from services.agency_service import get_agency_profile, update_agency_profile
@@ -26,41 +30,29 @@ router = APIRouter(prefix="/api/agency", tags=["Agency"])
 
 
 # ---------------------------------------------------------------------------
-# Dependency: Agency OR Administrator
-# (used for GET /profile so admins can inspect any agency's profile)
-# ---------------------------------------------------------------------------
-
-def require_agency_or_admin():
-    """
-    Returns a dependency that passes for Agency or Administrator roles.
-
-    Administrators can READ any profile for oversight/support purposes,
-    but cannot WRITE to an agency's profile (PUT uses require_agency() only).
-    """
-    return require_roles([UserRole.AGENCY, UserRole.ADMINISTRATOR])
-
-
-# ---------------------------------------------------------------------------
 # GET /api/agency/dashboard
-# Roles: Agency only
-# (Preserved from original implementation — no changes)
+# Permissions: analytics:view
 # ---------------------------------------------------------------------------
 
 @router.get(
     "/dashboard",
     summary="Agency dashboard",
-    description="Returns Agency-specific dashboard data. Accessible by the Agency role only.",
+    description=(
+        "Returns Agency-specific dashboard data. "
+        "Requires 'analytics:view' permission."
+    ),
 )
-async def agency_dashboard(current_user: UserInDB = Depends(require_agency())):
+async def agency_dashboard(
+    current_user: UserInDB = Depends(require_permission(Permission.ANALYTICS_VIEW)),
+):
     """
-    Agency-only protected route.
+    Agency dashboard — accessible by roles with analytics:view permission
+    (Admin, Agency, Marketing).
 
-    Authorization flow (handled entirely by require_agency()):
+    Authorization flow (handled by require_permission()):
       1. Bearer token extracted from Authorization header.
       2. JWT verified — raises 401 if missing, expired, or invalid.
-      3. User loaded from database — raises 401 if not found.
-      4. Role checked — raises 403 if role != "agency".
-      5. Handler executes with the authenticated UserInDB.
+      3. Permission checked — raises 403 if role lacks 'analytics:view'.
     """
     return {
         "message": f"Welcome to the Agency Dashboard, {current_user.full_name}!",
@@ -78,7 +70,8 @@ async def agency_dashboard(current_user: UserInDB = Depends(require_agency())):
 
 # ---------------------------------------------------------------------------
 # GET /api/agency/profile
-# Roles: Agency (own profile) | Administrator (any agency's profile)
+# Permissions: creator:view (full) or creator:view:own
+# Agency has full creator:view, so they can view any profile.
 # ---------------------------------------------------------------------------
 
 @router.get(
@@ -87,32 +80,27 @@ async def agency_dashboard(current_user: UserInDB = Depends(require_agency())):
     status_code=status.HTTP_200_OK,
     summary="Get agency profile",
     description=(
-        "Returns the full agency profile for the authenticated agency user. "
-        "Administrator users can also call this endpoint to inspect any agency's profile."
+        "Returns the full agency profile. "
+        "Admin and Agency have full access. "
     ),
     responses={
         200: {"description": "Agency profile returned successfully."},
         401: {"description": "Missing or invalid JWT token."},
-        403: {"description": "Insufficient role — Agency or Administrator required."},
+        403: {"description": "Insufficient permission."},
         404: {"description": "Agency profile not found (profile not yet completed)."},
     },
 )
 async def get_agency_profile_endpoint(
-    current_user: UserInDB = Depends(require_agency_or_admin()),
+    current_user: UserInDB = Depends(
+        require_any_permission(Permission.CREATOR_VIEW, Permission.CREATOR_VIEW_OWN)
+    ),
 ) -> AgencyProfileResponse:
     """
-    Retrieve the authenticated agency user's profile.
+    Retrieve the agency user's profile.
 
-    The user_id is taken from the verified JWT — no query param needed.
-    The Administrator sees the same response shape as an Agency user.
-
-    Service call:
-        get_agency_profile(user_id) → AgencyProfileResponse | None
-
-    Error responses:
-        401 — Token missing / expired / invalid
-        403 — Role is not agency or administrator
-        404 — No agency_profiles row found for this user_id
+    Access levels:
+      - "full"  (Admin, Agency, Marketing): Can view any profile.
+      - "own"   (Creator): Can only view their own.
     """
     profile = await get_agency_profile(current_user.id)
 
@@ -130,7 +118,7 @@ async def get_agency_profile_endpoint(
 
 # ---------------------------------------------------------------------------
 # PUT /api/agency/profile
-# Roles: Agency only (no admin write access)
+# Permissions: creator:update (full) or creator:update:own
 # ---------------------------------------------------------------------------
 
 @router.put(
@@ -139,43 +127,36 @@ async def get_agency_profile_endpoint(
     status_code=status.HTTP_200_OK,
     summary="Update agency profile",
     description=(
-        "Update the authenticated agency user's profile. "
-        "All fields are optional — send only the fields you wish to change. "
-        "Only users with the Agency role can call this endpoint."
+        "Update the agency user's profile. "
+        "Admin has full access. Agency can update only their own profile."
     ),
     responses={
         200: {"description": "Profile updated successfully."},
         400: {"description": "Validation error — check field formats."},
         401: {"description": "Missing or invalid JWT token."},
-        403: {"description": "Insufficient role — Agency required."},
+        403: {"description": "Insufficient permission — creator:update required."},
     },
 )
 async def update_agency_profile_endpoint(
     data: AgencyProfileRequest,
-    current_user: UserInDB = Depends(require_agency()),
+    current_user: UserInDB = Depends(
+        require_any_permission(Permission.CREATOR_UPDATE, Permission.CREATOR_UPDATE_OWN)
+    ),
 ) -> AgencyProfileResponse:
     """
     Update the agency's own profile.
 
-    The user_id is taken from the verified JWT — agency users can only update
-    their own profile; they cannot supply a different user_id.
-
-    Validation:
-        - phone:   Regex — 7-20 chars, digits/spaces/hyphens/parens
-        - website: Must begin with http:// or https://
-        - logo:    Must begin with http:// or https://
-
-    Service call:
-        update_agency_profile(user_id, data) → AgencyProfileResponse | None
-
-    On success:
-        Returns the full updated profile as AgencyProfileResponse (HTTP 200).
-
-    Error responses:
-        400 — Pydantic validation failure (invalid phone, URL, etc.)
-        401 — Token missing / expired / invalid
-        403 — Role is not agency
+    Access levels:
+      - "full"  (Admin): Can update any agency's profile.
+      - "own"   (Agency): Can only update their own profile.
     """
+    # Determine access level and enforce ownership if needed
+    level = get_access_level(
+        current_user, Permission.CREATOR_UPDATE, Permission.CREATOR_UPDATE_OWN
+    )
+    if level == "own":
+        verify_ownership(current_user.id, current_user.id, "agency profile")
+
     updated_profile = await update_agency_profile(current_user.id, data)
 
     if updated_profile is None:
@@ -185,3 +166,4 @@ async def update_agency_profile_endpoint(
         )
 
     return updated_profile
+

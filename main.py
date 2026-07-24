@@ -17,9 +17,18 @@ from routes.admin import router as admin_router
 from routes.profile import router as profile_router
 from routes.account import router as account_router
 from routes.content_analytics import router as content_router
+from routes.social_media import router as social_router
+
+# Growth Analytics Module
+from routes.growth import router as growth_router
+from routes.trend import router as trend_router
+from routes.hashtag import router as hashtag_router
+from routes.prediction import prediction_router, forecast_router
+from routes.content_growth import router as content_growth_router
 
 
 # ---------------------------------------------------------------------------
+
 # App Initialization
 # ---------------------------------------------------------------------------
 
@@ -71,6 +80,17 @@ app.include_router(account_router)    # /api/account/*
 
 # Mount the content analytics router
 app.include_router(content_router)    # /api/content/*
+
+# Mount the social media integration router
+app.include_router(social_router)     # /api/social/*
+
+# Mount the Growth Analytics Module routers
+app.include_router(growth_router)          # /api/growth/*
+app.include_router(trend_router)           # /api/trend/*
+app.include_router(hashtag_router)         # /api/hashtags/*
+app.include_router(prediction_router)      # /api/prediction/*
+app.include_router(forecast_router)        # /api/forecast/*
+app.include_router(content_growth_router)  # /api/content/{id}/growth
 
 
 # ---------------------------------------------------------------------------

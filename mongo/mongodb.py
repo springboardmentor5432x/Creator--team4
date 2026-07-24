@@ -1,3 +1,4 @@
+import certifi
 from motor.motor_asyncio import AsyncIOMotorClient
 from config import settings
 
@@ -8,7 +9,13 @@ class MongoDB:
 db_manager = MongoDB()
 
 async def connect_to_mongo():
-    db_manager.client = AsyncIOMotorClient(settings.MONGODB_URL)
+    # Use TLS settings only for Atlas (mongodb+srv) connections
+    connect_args = {"host": settings.MONGODB_URL}
+    if settings.MONGODB_URL.startswith("mongodb+srv"):
+        connect_args["tlsCAFile"] = certifi.where()
+        connect_args["tlsAllowInvalidCertificates"] = True
+
+    db_manager.client = AsyncIOMotorClient(**connect_args)
     db_manager.db = db_manager.client[settings.MONGODB_DB_NAME]
     print(f"Connected to MongoDB at {settings.MONGODB_URL}, DB: {settings.MONGODB_DB_NAME}")
 

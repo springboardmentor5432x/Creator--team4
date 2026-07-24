@@ -24,7 +24,7 @@ Why a dedicated authorization.py (separate from dependencies.py)?
   - Easy to unit-test without importing the whole app.
 """
 
-from typing import Callable, List
+from typing import Callable, List, Optional, Union
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -33,6 +33,7 @@ from roles import UserRole
 from schemas import UserInDB
 from security import verify_token
 from services.user_service import get_user_by_email
+from permissions import Permission, ROLE_PERMISSIONS, has_permission, has_full_or_own_permission
 
 # ---------------------------------------------------------------------------
 # OAuth2 Bearer Token Scheme
@@ -248,3 +249,151 @@ def require_admin() -> Callable:
             ...
     """
     return require_roles([UserRole.ADMINISTRATOR])
+
+
+# ---------------------------------------------------------------------------
+# Authorization — Granular Permission Dependencies
+# ---------------------------------------------------------------------------
+# These replace the role-only checks with fine-grained permission checks.
+# The old require_<role>() functions above are kept for backward compat.
+# ---------------------------------------------------------------------------
+
+def require_permission(required_permission: Permission) -> Callable:
+    """
+    Permission-based authorization factory.
+
+    Returns a FastAPI dependency that:
+      1. Authenticates the request via get_current_active_user().
+      2. Checks whether the user's role has `required_permission` in
+         the ROLE_PERMISSIONS mapping from permissions.py.
+      3. Returns UserInDB on success.
+      4. Raises HTTP 403 on failure.
+
+    For ":own" permissions, this dependency only confirms the role has
+    the permission — the route handler must still verify resource ownership.
+
+    Args:
+        required_permission: The Permission enum member to check.
+
+    Returns:
+        An async callable suitable for use with FastAPI's Depends().
+
+    Examples:
+        # Admin-only endpoint
+        Depends(require_permission(Permission.USER_VIEW))
+
+        # Creator can create content
+        Depends(require_permission(Permission.CONTENT_CREATE))
+    """
+    async def _permission_checker(
+        current_user: UserInDB = Depends(get_current_active_user),
+    ) -> UserInDB:
+        if not has_permission(current_user.role, required_permission):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "error":      "Permission denied.",
+                    "required":   required_permission.value,
+                    "your_role":  current_user.role.value,
+                    "hint":       f"Your role '{current_user.role.value}' does not have the '{required_permission.value}' permission.",
+                },
+            )
+        return current_user
+
+    _permission_checker.__name__ = f"require_permission({required_permission.value})"
+    return _permission_checker
+
+
+def require_any_permission(*permissions: Permission) -> Callable:
+    """
+    Permit the request if the user's role has ANY of the listed permissions.
+
+    Useful when a single endpoint accepts both full-access and own-only roles.
+    For example, an endpoint that Admin can use on any resource and Creator
+    can use on their own resource:
+
+        Depends(require_any_permission(
+            Permission.CONTENT_UPDATE,       # full access
+            Permission.CONTENT_UPDATE_OWN,   # own-only access
+        ))
+
+    The route handler should then call `get_access_level()` to determine
+    whether the caller has full or own-only access.
+    """
+    async def _any_permission_checker(
+        current_user: UserInDB = Depends(get_current_active_user),
+    ) -> UserInDB:
+        role_perms = ROLE_PERMISSIONS.get(current_user.role, frozenset())
+        if not any(p in role_perms for p in permissions):
+            perm_values = [p.value for p in permissions]
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "error":      "Permission denied.",
+                    "required":   perm_values,
+                    "your_role":  current_user.role.value,
+                    "hint":       f"Your role '{current_user.role.value}' does not have any of: {perm_values}",
+                },
+            )
+        return current_user
+
+    perm_names = [p.value for p in permissions]
+    _any_permission_checker.__name__ = f"require_any_permission({perm_names})"
+    return _any_permission_checker
+
+
+def get_access_level(
+    user: UserInDB,
+    full_perm: Permission,
+    own_perm: Permission,
+) -> str:
+    """
+    Determine whether the user has 'full', 'own', or 'none' access.
+
+    Call this inside a route handler AFTER require_any_permission() has
+    already confirmed the user has at least one of the two permissions.
+
+    Args:
+        user: The authenticated user (from Depends).
+        full_perm: Permission granting unrestricted access.
+        own_perm: Permission granting own-resource-only access.
+
+    Returns:
+        "full"  — user can act on any resource
+        "own"   — user can act only on their own resources
+        "none"  — user has no access (should not happen after require_any_permission)
+
+    Example:
+        level = get_access_level(current_user, Permission.CONTENT_UPDATE, Permission.CONTENT_UPDATE_OWN)
+        if level == "own" and resource.owner_id != current_user.id:
+            raise HTTPException(403, "You can only update your own content.")
+    """
+    return has_full_or_own_permission(user.role, full_perm, own_perm)
+
+
+def verify_ownership(
+    resource_owner_id: Union[int, str],
+    current_user_id: Union[int, str],
+    resource_name: str = "resource",
+) -> None:
+    """
+    Assert that a resource belongs to the current user.
+
+    Raises HTTP 403 if the IDs don't match.
+
+    Args:
+        resource_owner_id: The owner ID stored on the resource.
+        current_user_id: The authenticated user's ID.
+        resource_name: Human-readable name for the error message.
+
+    Usage:
+        verify_ownership(content.creator_id, current_user.id, "content")
+    """
+    if str(resource_owner_id) != str(current_user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "error": "Ownership required.",
+                "hint":  f"You can only modify your own {resource_name}.",
+            },
+        )

@@ -26,6 +26,11 @@ from authorization import (           # noqa: F401
     require_agency,
     require_marketing_team,
     require_admin,
+    # Granular permission dependencies (new)
+    require_permission,
+    require_any_permission,
+    get_access_level,
+    verify_ownership,
 )
 
 from typing import AsyncGenerator

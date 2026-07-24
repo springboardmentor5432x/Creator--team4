@@ -1,16 +1,17 @@
 """
 routes/admin.py - Administrator-Only Endpoints
 
-All routes require the authenticated user to hold the `administrator` role.
-Authorization is enforced via the require_admin() dependency from authorization.py.
+All routes require the authenticated user to hold the appropriate
+administrator permissions from the permission matrix.
 
 Protected Endpoints:
-  GET /api/admin/dashboard
+  GET /api/admin/dashboard  — requires user:view permission
 """
 
 from fastapi import APIRouter, Depends
 
-from authorization import require_admin
+from authorization import require_permission
+from permissions import Permission
 from schemas import UserInDB
 
 router = APIRouter(prefix="/api/admin", tags=["Administrator"])
@@ -19,17 +20,19 @@ router = APIRouter(prefix="/api/admin", tags=["Administrator"])
 @router.get(
     "/dashboard",
     summary="Administrator dashboard",
-    description="Returns Admin dashboard data. Accessible by the Administrator role only.",
+    description="Returns Admin dashboard data. Requires the 'user:view' permission (Administrator only).",
 )
-async def admin_dashboard(current_user: UserInDB = Depends(require_admin())):
+async def admin_dashboard(
+    current_user: UserInDB = Depends(require_permission(Permission.USER_VIEW)),
+):
     """
     Administrator-only protected route.
 
-    Authorization flow (handled entirely by require_admin()):
+    Authorization flow (handled by require_permission()):
       1. Bearer token extracted from Authorization header.
       2. JWT verified — raises 401 if missing, expired, or invalid.
       3. User loaded from database — raises 401 if not found.
-      4. Role checked — raises 403 if role != "administrator".
+      4. Permission checked — raises 403 if role lacks 'user:view'.
       5. Handler executes with the authenticated UserInDB.
     """
     return {
@@ -45,3 +48,4 @@ async def admin_dashboard(current_user: UserInDB = Depends(require_admin())):
             "recent_audit_logs": [],
         },
     }
+

@@ -39,6 +39,22 @@ class Settings(BaseSettings):
     MONGODB_URL: str
     MONGODB_DB_NAME: str = "creatoriq"
 
+    # --- Social Media API Keys ---
+    # Instagram / Facebook (Meta Graph API)
+    META_APP_ID: str = ""
+    META_APP_SECRET: str = ""
+    META_REDIRECT_URI: str = "http://localhost:8000/api/social/callback/instagram"
+
+    # YouTube (Google OAuth + YouTube Data/Analytics API)
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/social/callback/youtube"
+
+    # LinkedIn (Marketing API)
+    LINKEDIN_CLIENT_ID: str = ""
+    LINKEDIN_CLIENT_SECRET: str = ""
+    LINKEDIN_REDIRECT_URI: str = "http://localhost:8000/api/social/callback/linkedin"
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
