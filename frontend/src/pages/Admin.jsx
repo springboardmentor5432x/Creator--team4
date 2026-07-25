@@ -212,8 +212,9 @@ export default function Admin({ user, onLogout }) {
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.1)' }}>
                     <th style={{ padding: '0.875rem 1.25rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-primary)' }}>Name & Email</th>
-                    <th style={{ padding: '0.875rem 1.25rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-primary)' }}>Assigned Role</th>
-                    <th style={{ padding: '0.875rem 1.25rem', textAlign: 'right', fontWeight: 600, color: 'var(--text-primary)' }}>Modify Role</th>
+                    <th style={{ padding: '0.875rem 1.25rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-primary)' }}>Chosen Role</th>
+                    <th style={{ padding: '0.875rem 1.25rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-primary)' }}>Granted Page Permission</th>
+                    <th style={{ padding: '0.875rem 1.25rem', textAlign: 'right', fontWeight: 600, color: 'var(--text-primary)' }}>Grant / Modify Role</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -240,17 +241,45 @@ export default function Admin({ user, onLogout }) {
                                       : 'rgba(16,185,129,0.1)',
                             color: u.role === 'Administrator' ? 'var(--rose-400)'
                                  : u.role === 'Agency' ? 'var(--blue-400)'
-                                 : 'var(--orange-500)',
+                                 : u.role === 'Marketing Team' ? 'var(--orange-500)'
+                                 : 'var(--emerald-400)',
                             border: u.role === 'Administrator' ? '1px solid rgba(239,68,68,0.2)'
                                   : u.role === 'Agency' ? '1px solid rgba(59,130,246,0.2)'
-                                  : '1px solid rgba(245,158,11,0.2)',
+                                  : u.role === 'Marketing Team' ? '1px solid rgba(245,158,11,0.2)'
+                                  : '1px solid rgba(16,185,129,0.2)',
                           }}
                         >
                           {u.role}
                         </span>
                       </td>
 
-                      {/* Actions (Role Select dropdown) */}
+                      {/* Granted Permission Scope */}
+                      <td style={{ padding: '1rem 1.25rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', fontWeight: 600 }}>
+                          {u.role === 'Administrator' && (
+                            <span style={{ color: 'var(--rose-400)', background: 'rgba(239,68,68,0.08)', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', border: '1px solid rgba(239,68,68,0.2)' }}>
+                              🛡️ Administrator Page (/admin)
+                            </span>
+                          )}
+                          {u.role === 'Marketing Team' && (
+                            <span style={{ color: 'var(--orange-500)', background: 'rgba(245,158,11,0.08)', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', border: '1px solid rgba(245,158,11,0.2)' }}>
+                              📈 Marketing Page (/reports & /workflows)
+                            </span>
+                          )}
+                          {u.role === 'Agency' && (
+                            <span style={{ color: 'var(--blue-400)', background: 'rgba(59,130,246,0.08)', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', border: '1px solid rgba(59,130,246,0.2)' }}>
+                              👥 Agency Page (/audience & /workflows)
+                            </span>
+                          )}
+                          {u.role === 'Creator' && (
+                            <span style={{ color: 'var(--emerald-400)', background: 'rgba(16,185,129,0.08)', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', border: '1px solid rgba(16,185,129,0.2)' }}>
+                              📊 Creator Page (/youtube)
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Actions (Role & Permission Select dropdown) */}
                       <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem' }}>
                           {updatingUserId === u.id && (
@@ -271,7 +300,7 @@ export default function Admin({ user, onLogout }) {
                               cursor: u.email === user.email ? 'not-allowed' : 'pointer',
                               fontFamily: 'inherit'
                             }}
-                            title={u.email === user.email ? "You cannot modify your own administrator role to prevent lockouts." : "Change user workspace permissions"}
+                            title={u.email === user.email ? "You cannot modify your own administrator role to prevent lockouts." : "Grant role access permissions"}
                           >
                             <option value="Creator">Creator</option>
                             <option value="Agency">Agency</option>

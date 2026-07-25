@@ -21,7 +21,11 @@ export default function Login({ onLoginSuccess }) {
       setSuccess('Google Login Successful!');
       onLoginSuccess(result.user, result.token);
       setTimeout(() => {
-        navigate(result.user.role === 'Administrator' ? '/admin' : '/youtube');
+        const dest = result.user.role === 'Administrator' ? '/admin'
+                   : result.user.role === 'Marketing Team' ? '/reports'
+                   : result.user.role === 'Agency' ? '/audience'
+                   : '/youtube';
+        navigate(dest);
       }, 1000);
     } catch (err) {
       setError(err.message || 'Google authentication failed');
@@ -83,7 +87,11 @@ export default function Login({ onLoginSuccess }) {
       setSuccess('Login Successful! Redirecting...');
       onLoginSuccess(result.user, result.token);
       setTimeout(() => {
-        navigate(result.user.role === 'Administrator' ? '/admin' : '/youtube');
+        const dest = result.user.role === 'Administrator' ? '/admin'
+                   : result.user.role === 'Marketing Team' ? '/reports'
+                   : result.user.role === 'Agency' ? '/audience'
+                   : '/youtube';
+        navigate(dest);
       }, 1000);
     } catch (err) {
       setError(err.message || 'Invalid email or password');

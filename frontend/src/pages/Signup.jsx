@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../api';
 import FloatingInput from '../components/FloatingInput';
+import FloatingSelect from '../components/FloatingSelect';
 import AuthLayout from '../components/AuthLayout';
 
 /* ---------- Password Strength Helper ---------- */
@@ -21,8 +22,15 @@ function getStrength(pwd) {
   return { score, ...(map[score] || { width: '0%', color: '#1f2230', text: '' }) };
 }
 
+const ROLE_OPTIONS = [
+  { value: 'Creator', label: 'Creator' },
+  { value: 'Agency', label: 'Agency' },
+  { value: 'Marketing Team', label: 'Marketing Team' },
+  { value: 'Administrator', label: 'Administrator' },
+];
+
 export default function Signup({ onLoginSuccess }) {
-  const [form, setForm] = useState({ name: '', email: '', password: '', terms: false });
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'Creator', terms: false });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -36,11 +44,15 @@ export default function Signup({ onLoginSuccess }) {
     setError('');
     setSuccess('');
     try {
-      const result = await api.googleLogin(response.credential);
+      const result = await api.googleLogin(response.credential, form.role);
       setSuccess('Google Login Successful!');
       onLoginSuccess(result.user, result.token);
       setTimeout(() => {
-        navigate(result.user.role === 'Administrator' ? '/admin' : '/youtube');
+        const dest = result.user.role === 'Administrator' ? '/admin'
+                   : result.user.role === 'Marketing Team' ? '/reports'
+                   : result.user.role === 'Agency' ? '/audience'
+                   : '/youtube';
+        navigate(dest);
       }, 1000);
     } catch (err) {
       setError(err.message || 'Google authentication failed');
@@ -82,7 +94,7 @@ export default function Signup({ onLoginSuccess }) {
       }, 500);
       return () => clearInterval(timer);
     }
-  }, []);
+  }, [form.role]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -101,7 +113,7 @@ export default function Signup({ onLoginSuccess }) {
     setSuccess('');
 
     try {
-      await api.register(form.name, form.email, form.password);
+      await api.register(form.name, form.email, form.password, form.role);
       setSuccess('Account created successfully! Redirecting to login...');
       setTimeout(() => {
         navigate('/login');
@@ -184,6 +196,19 @@ export default function Signup({ onLoginSuccess }) {
             }
           />
 
+          <FloatingSelect
+            id="role"
+            label="Select Account Role"
+            value={form.role}
+            onChange={handleChange}
+            options={ROLE_OPTIONS}
+            icon={
+              <svg style={{ width: '1.1rem', height: '1.1rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            }
+          />
+
           <div>
             <FloatingInput
               id="password"
@@ -199,7 +224,7 @@ export default function Signup({ onLoginSuccess }) {
               }
             />
 
-            {!isLogin && form.password.length > 0 && (
+            {form.password.length > 0 && (
               <div className="animate-slide-up" style={{ marginTop: '-0.75rem', marginBottom: '1.25rem' }}>
                 <div style={{ height: '0.25rem', background: 'var(--border-color)', borderRadius: '9999px', overflow: 'hidden', marginBottom: '0.375rem' }}>
                   <div style={{ height: '100%', width: strength.width, background: strength.color, transition: 'all 0.4s', borderRadius: '9999px' }} />

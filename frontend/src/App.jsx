@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Admin from './pages/Admin';
 import DashboardPage from './pages/DashboardPage';
+import { api } from './api';
 
 function AppContent() {
   const [user, setUser] = useState(() => {
@@ -17,6 +18,28 @@ function AppContent() {
 
   const navigate = useNavigate();
   const location = useLocation();
+
+  // On startup, fetch fresh profile from server to replace stale localStorage snapshot.
+  // This ensures instagram_verified_meta, facebook_verified_meta and all connected account
+  // fields are always up-to-date, even if the user refreshes or logs back in.
+  useEffect(() => {
+    const token = localStorage.getItem('creatoriq_token');
+    if (!token) return;
+    api.me()
+      .then(data => {
+        if (data && data.user) {
+          const freshUser = data.user;
+          setUser(freshUser);
+          localStorage.setItem('creatoriq_user', JSON.stringify(freshUser));
+        }
+      })
+      .catch(() => {
+        // Token may be expired; clear session silently
+        localStorage.removeItem('creatoriq_user');
+        localStorage.removeItem('creatoriq_token');
+        setUser(null);
+      });
+  }, []);
 
   const handleLoginSuccess = (userPayload, token) => {
     localStorage.setItem('creatoriq_user', JSON.stringify(userPayload));
@@ -55,14 +78,26 @@ function AppContent() {
     } else {
       // If logged in
       if (user.role === 'Administrator') {
-        // Admin allowed paths
-        const allowed = ['/admin', '/youtube', '/instagram', '/facebook', '/linkedin'];
+        // Administrator granted paths
+        const allowed = ['/admin', '/youtube', '/instagram', '/facebook', '/linkedin', '/twitter', '/workflows', '/reports', '/audience', '/revenue'];
         if (!allowed.includes(path)) {
           navigate('/admin', { replace: true });
         }
+      } else if (user.role === 'Marketing Team') {
+        // Marketing Team granted paths (Default: /reports)
+        const allowed = ['/reports', '/workflows', '/youtube', '/instagram', '/facebook', '/linkedin', '/twitter', '/audience', '/revenue'];
+        if (!allowed.includes(path)) {
+          navigate('/reports', { replace: true });
+        }
+      } else if (user.role === 'Agency') {
+        // Agency granted paths (Default: /audience)
+        const allowed = ['/audience', '/workflows', '/reports', '/youtube', '/instagram', '/facebook', '/linkedin', '/twitter', '/revenue'];
+        if (!allowed.includes(path)) {
+          navigate('/audience', { replace: true });
+        }
       } else {
-        // Standard user allowed paths
-        const allowed = ['/youtube', '/instagram', '/facebook', '/linkedin'];
+        // Creator granted paths (Default: /youtube)
+        const allowed = ['/youtube', '/instagram', '/facebook', '/linkedin', '/twitter', '/workflows', '/reports', '/audience', '/revenue'];
         if (!allowed.includes(path)) {
           navigate('/youtube', { replace: true });
         }
@@ -105,11 +140,35 @@ function AppContent() {
         path="/linkedin" 
         element={user ? <DashboardPage user={user} onBack={user.role === 'Administrator' ? () => navigate('/admin') : handleLogout} /> : <Navigate to="/login" replace />} 
       />
+      <Route 
+        path="/twitter" 
+        element={user ? <DashboardPage user={user} onBack={user.role === 'Administrator' ? () => navigate('/admin') : handleLogout} /> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/workflows" 
+        element={user ? <DashboardPage user={user} onBack={user.role === 'Administrator' ? () => navigate('/admin') : handleLogout} /> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/reports" 
+        element={user ? <DashboardPage user={user} onBack={user.role === 'Administrator' ? () => navigate('/admin') : handleLogout} /> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/audience" 
+        element={user ? <DashboardPage user={user} onBack={user.role === 'Administrator' ? () => navigate('/admin') : handleLogout} /> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/revenue" 
+        element={user ? <DashboardPage user={user} onBack={user.role === 'Administrator' ? () => navigate('/admin') : handleLogout} /> : <Navigate to="/login" replace />} 
+      />
 
       {/* Fallbacks */}
       <Route 
         path="/" 
-        element={<Navigate to={user ? (user.role === 'Administrator' ? '/admin' : '/youtube') : '/login'} replace />} 
+        element={<Navigate to={user ? (
+          user.role === 'Administrator' ? '/admin' :
+          user.role === 'Marketing Team' ? '/reports' :
+          user.role === 'Agency' ? '/audience' : '/youtube'
+        ) : '/login'} replace />} 
       />
       <Route 
         path="*" 

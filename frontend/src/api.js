@@ -21,14 +21,22 @@ async function request(path, options = {}) {
     ...options,
   });
 
-  const data = await res.json();
+  const text = await res.text();
+  let data = {};
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch (e) {
+    if (!res.ok) {
+      throw new Error(`Server error (${res.status}): ${text.slice(0, 100)}`);
+    }
+  }
 
   if (!res.ok) {
     if (res.status === 401) {
       localStorage.removeItem('creatoriq_user');
       localStorage.removeItem('creatoriq_token');
     }
-    throw new Error(data.error || `Request failed with status ${res.status}`);
+    throw new Error(data.error || data.detail || `Request failed with status ${res.status}`);
   }
 
   return data;
@@ -41,16 +49,16 @@ export const api = {
       body: JSON.stringify({ email, password }),
     }),
 
-  register: (name, email, password) =>
+  register: (name, email, password, role) =>
     request('/register/', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, role }),
     }),
 
-  googleLogin: (credential) =>
+  googleLogin: (credential, role) =>
     request('/google-login/', {
       method: 'POST',
-      body: JSON.stringify({ credential }),
+      body: JSON.stringify({ credential, role }),
     }),
 
   listUsers: () =>
@@ -65,6 +73,7 @@ export const api = {
     }),
 
   health: () => request('/health'),
+  me: () => request('/me/'),
   getYoutubeChannel: (query, channelId = '') => {
     const url = channelId 
       ? `/youtube/channel/?channel_id=${encodeURIComponent(channelId)}`
@@ -94,5 +103,121 @@ export const api = {
   disconnectLinkedin: () =>
     request('/users/disconnect-linkedin/', {
       method: 'POST',
+    }),
+
+  // Instagram
+  connectInstagram: (username) =>
+    request('/users/connect-instagram/', {
+      method: 'POST',
+      body: JSON.stringify({ username }),
+    }),
+
+  disconnectInstagram: () =>
+    request('/users/disconnect-instagram/', {
+      method: 'POST',
+    }),
+
+  getInstagramAnalytics: () =>
+    request('/instagram/analytics/', {
+      method: 'GET',
+    }),
+
+  // Facebook
+  connectFacebook: (pageName, groupId = '') =>
+    request('/users/connect-facebook/', {
+      method: 'POST',
+      body: JSON.stringify({ pageName, groupId }),
+    }),
+
+  disconnectFacebook: () =>
+    request('/users/disconnect-facebook/', {
+      method: 'POST',
+    }),
+
+  getFacebookAnalytics: () =>
+    request('/facebook/analytics/', {
+      method: 'GET',
+    }),
+
+  // Twitter / X
+  connectTwitter: (username) =>
+    request('/users/connect-twitter/', {
+      method: 'POST',
+      body: JSON.stringify({ username }),
+    }),
+
+  disconnectTwitter: () =>
+    request('/users/disconnect-twitter/', {
+      method: 'POST',
+    }),
+
+  getTwitterAnalytics: () =>
+    request('/twitter/analytics/', {
+      method: 'GET',
+    }),
+
+  // Trend Reports
+  listReports: () =>
+    request('/reports/', {
+      method: 'GET',
+    }),
+
+  generateReport: (title, platforms) =>
+    request('/reports/generate/', {
+      method: 'POST',
+      body: JSON.stringify({ title, platforms }),
+    }),
+
+  deleteReport: (reportId) =>
+    request('/reports/delete/', {
+      method: 'POST',
+      body: JSON.stringify({ reportId }),
+    }),
+
+  // Workflows
+  listWorkflows: () =>
+    request('/workflows/', {
+      method: 'GET',
+    }),
+
+  createWorkflow: (title, caption, mediaUrl, platforms, scheduledTime) =>
+    request('/workflows/create/', {
+      method: 'POST',
+      body: JSON.stringify({ title, caption, mediaUrl, platforms, scheduledTime }),
+    }),
+
+  publishWorkflow: (postId) =>
+    request('/workflows/publish/', {
+      method: 'POST',
+      body: JSON.stringify({ postId }),
+    }),
+
+  deleteWorkflow: (postId) =>
+    request('/workflows/delete/', {
+      method: 'POST',
+      body: JSON.stringify({ postId }),
+    }),
+
+  // Revenue Deals
+  listDeals: () =>
+    request('/revenue/deals/', {
+      method: 'GET',
+    }),
+
+  createDeal: (dealData) =>
+    request('/revenue/deals/create/', {
+      method: 'POST',
+      body: JSON.stringify(dealData),
+    }),
+
+  deleteDeal: (dealId) =>
+    request(`/revenue/deals/delete/${dealId}/`, {
+      method: 'DELETE',
+    }),
+
+  // Audience Insights
+  getAudienceInsights: (platform) =>
+    request(`/audience/insights/?platform=${platform}`, {
+      method: 'GET',
     }),
 };
