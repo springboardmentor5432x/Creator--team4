@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../api';
 import RevenueAnalytics from '../components/RevenueAnalytics';
-import { TwitterTimelineEmbed } from 'react-twitter-embed';
+
 
 export default function Dashboard({ user, onBack }) {
   const navigate = useNavigate();
@@ -461,7 +461,7 @@ export default function Dashboard({ user, onBack }) {
   const realFbReach = (connectedFacebookId || connectedFacebookTitle) ? fbStats.reach : 0;
   const realFbEngagement = (connectedFacebookId || connectedFacebookTitle) ? fbStats.eng : 0;
 
-  const totalRealFollowers = realYtSubs + realLiConnections + realIgFollowers + realFbFollowers;
+  const totalRealFollowers = realYtSubs + realLiConnections + realIgFollowers + realFbFollowers + connectedTwitterFollowers;
   const totalRealImpressions = realYtViews + realLiImpressions + realFbReach;
   const totalRealPosts = realYtVideos + realIgPosts + (workflows ? workflows.length : 0);
 
@@ -1257,6 +1257,14 @@ export default function Dashboard({ user, onBack }) {
     fetchYouTubeData(q, false);
   };
 
+  const handleSyncYoutube = () => {
+    if (connectedChannelId && !publicMode) {
+      fetchYouTubeData(connectedChannelId, true);
+    } else if (publicMode && searchQuery.trim()) {
+      fetchYouTubeData(searchQuery, false);
+    }
+  };
+
   // Helper: Format numbers to K, M, B
   const formatNumber = (num) => {
     if (!num) return '0';
@@ -1695,6 +1703,40 @@ export default function Dashboard({ user, onBack }) {
                       Compare public channels
                     </label>
 
+                    <button
+                      onClick={handleSyncYoutube}
+                      disabled={loading}
+                      style={{
+                        padding: '0.5rem 1rem',
+                        borderRadius: '0.75rem',
+                        border: '1px solid var(--border-color)',
+                        background: 'var(--brand-500)',
+                        color: 'white',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        fontFamily: 'inherit',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        opacity: loading ? 0.7 : 1,
+                      }}
+                      onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = 'var(--brand-600)' }}
+                      onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = 'var(--brand-500)' }}
+                    >
+                      {loading ? (
+                        <>
+                          <div className="spinner" style={{ width: '12px', height: '12px', border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                          Syncing...
+                        </>
+                      ) : (
+                        <>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                          Sync Live Data
+                        </>
+                      )}
+                    </button>
                     <button
                       onClick={handleDisconnectChannel}
                       style={{
@@ -2711,14 +2753,42 @@ export default function Dashboard({ user, onBack }) {
                     <a href={`https://twitter.com/${connectedTwitterUsername}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.8rem', color: '#1da1f2', textDecoration: 'none', fontWeight: 600 }}>View on X →</a>
                   </div>
                   <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '3rem 0', background: 'radial-gradient(ellipse at top, rgba(29,161,242,0.08) 0%, transparent 70%)', borderRadius: '0.75rem', border: '1px solid rgba(29,161,242,0.1)' }}>
-                    <div style={{ width: '500px', maxWidth: '100%', border: '1px solid rgba(255,255,255,0.15)', overflow: 'hidden', borderRadius: '12px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', background: '#fff' }}>
-                      <TwitterTimelineEmbed
-                        sourceType="profile"
-                        screenName={connectedTwitterUsername.replace('@', '')}
-                        options={{height: 750, width: 500}}
-                        noHeader={true}
-                        noFooter={true}
-                      />
+                    <div style={{ width: '500px', maxWidth: '100%', border: '1px solid rgba(255,255,255,0.15)', overflow: 'hidden', borderRadius: '12px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', background: '#fff', minHeight: '200px', display: 'flex', flexDirection: 'column' }}>
+                      {loadingTwitter ? (
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem' }}>
+                          <div className="spinner" style={{ width: '32px', height: '32px', border: '3px solid rgba(29,161,242,0.3)', borderTop: '3px solid #1da1f2', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                        </div>
+                      ) : twitterTweets && twitterTweets.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', maxHeight: '750px', overflowY: 'auto' }}>
+                          {twitterTweets.map((tweet) => (
+                            <a key={tweet.id} href={tweet.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', padding: '1.25rem', borderBottom: '1px solid #eff3f4', gap: '0.75rem', cursor: 'pointer' }}>
+                              <img src={connectedTwitterPicture || `https://ui-avatars.com/api/?name=${connectedTwitterUsername}&background=1da1f2&color=ffffff&bold=true`} alt="Avatar" style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} />
+                              <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap' }}>
+                                  <span style={{ fontWeight: 800, color: '#0f1419', fontSize: '0.95rem' }}>{connectedTwitterDisplayName || connectedTwitterUsername}</span>
+                                  {connectedTwitterVerified && <span style={{ color: '#1d9bf0', fontSize: '1.1rem', lineHeight: 1 }}>☑️</span>}
+                                  <span style={{ color: '#536471', fontSize: '0.9rem' }}>@{connectedTwitterUsername}</span>
+                                  <span style={{ color: '#536471', fontSize: '0.9rem' }}>· {new Date(tweet.created_at).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}</span>
+                                </div>
+                                <div style={{ color: '#0f1419', fontSize: '0.95rem', lineHeight: 1.4, marginTop: '0.25rem', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
+                                  {tweet.text}
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#536471', marginTop: '0.75rem', fontSize: '0.85rem', maxWidth: '300px' }}>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>💬 {tweet.reply_count > 0 ? formatNumber(tweet.reply_count) : ''}</span>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>🔄 {tweet.retweet_count > 0 ? formatNumber(tweet.retweet_count) : ''}</span>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>❤️ {tweet.like_count > 0 ? formatNumber(tweet.like_count) : ''}</span>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>🔗</span>
+                                </div>
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{ padding: '3rem', textAlign: 'center', color: '#536471', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', flex: 1, justifyContent: 'center' }}>
+                          <span style={{ fontSize: '2rem' }}>🐦</span>
+                          <span style={{ fontWeight: 600 }}>{connectedTwitterUsername ? 'No recent tweets available.' : 'No Twitter account connected'}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -3193,6 +3263,24 @@ export default function Dashboard({ user, onBack }) {
                       📘 {connectedFacebookTitle || 'Facebook Page'}
                     </button>
                   )}
+
+                  {connectedTwitterUsername && (
+                    <button
+                      onClick={() => setSelectedAnalyticsAccount('twitter')}
+                      style={{
+                        padding: '0.4rem 0.85rem',
+                        borderRadius: '0.5rem',
+                        fontWeight: 700,
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                        border: '1px solid var(--border-color)',
+                        background: selectedAnalyticsAccount === 'twitter' ? '#1da1f2' : 'var(--card-muted-bg)',
+                        color: selectedAnalyticsAccount === 'twitter' ? '#fff' : 'var(--text-secondary)'
+                      }}
+                    >
+                      🐦 {connectedTwitterDisplayName || 'Twitter Profile'}
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -3273,6 +3361,25 @@ export default function Dashboard({ user, onBack }) {
                     <span>Reach: <strong style={{ color: 'var(--text-primary)' }}>{realFbReach.toLocaleString()}</strong></span>
                   </div>
                 </div>
+
+                {/* Twitter Card */}
+                <div style={{ background: 'var(--card-muted-bg)', border: `1px solid ${selectedAnalyticsAccount === 'twitter' ? '#1da1f2' : 'var(--border-color)'}`, borderRadius: '0.75rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 800, fontSize: '0.85rem', color: '#1da1f2' }}>
+                      <span>🐦</span> Twitter Profile
+                    </div>
+                    <span style={{ fontSize: '0.65rem', background: connectedTwitterUsername ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: connectedTwitterUsername ? 'var(--emerald-400)' : 'var(--rose-400)', border: `1px solid ${connectedTwitterUsername ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`, padding: '0.1rem 0.4rem', borderRadius: '0.25rem', fontWeight: 700 }}>
+                      {connectedTwitterUsername ? '🟢 LINKED' : '🔴 NOT LINKED'}
+                    </span>
+                  </div>
+                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                    {connectedTwitterDisplayName || (connectedTwitterUsername ? connectedTwitterUsername : 'No profile linked')}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    <span>Followers: <strong style={{ color: 'var(--text-primary)' }}>{connectedTwitterFollowers.toLocaleString()}</strong></span>
+                    <span>Tweets: <strong style={{ color: 'var(--text-primary)' }}>{connectedTwitterTweets.toLocaleString()}</strong></span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -3280,37 +3387,37 @@ export default function Dashboard({ user, onBack }) {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(13rem, 1fr))', gap: '1.25rem' }}>
               {[
                 { 
-                  label: '(i) Growth Monitoring', 
+                  label: 'Growth Monitoring', 
                   value: displayFollowers > 0 ? `+${Math.round(displayFollowers * 0.08).toLocaleString()} / wk` : '0 / wk', 
                   desc: displayFollowers > 0 ? `Growth rate for ${selectedAnalyticsAccount === 'all' ? 'all channels' : selectedAnalyticsAccount}` : 'No connected accounts', 
                   color: 'var(--emerald-400)' 
                 },
                 { 
-                  label: '(ii) Trend Detection', 
+                  label: 'Trend Detection', 
                   value: connectedPlatformsList.length > 0 ? `${Math.min(98, 65 + connectedPlatformsList.length * 8)} / 100` : '0 / 100', 
                   desc: connectedPlatformsList.length > 0 ? `Viral opportunity index (${connectedPlatformsList.length} platforms)` : 'Connect account to score', 
                   color: 'var(--brand-400)' 
                 },
                 { 
-                  label: '(iii) Hashtag Analysis', 
+                  label: 'Hashtag Analysis', 
                   value: displayFollowers > 0 ? '18 Tracked' : '0 Tracked', 
                   desc: displayFollowers > 0 ? 'Avg +45% reach boost' : 'No hashtags active', 
                   color: 'var(--indigo-400)' 
                 },
                 { 
-                  label: '(iv) Reach Prediction', 
+                  label: 'Reach Prediction', 
                   value: displayImpressions > 0 ? `~${(displayImpressions > 1000000 ? (displayImpressions / 1000000).toFixed(1) + 'M' : (displayImpressions / 1000).toFixed(1) + 'K')} Views` : '0 Views', 
                   desc: '30-Day projected reach', 
                   color: 'var(--blue-400)' 
                 },
                 { 
-                  label: '(v) Content Growth', 
+                  label: 'Content Growth', 
                   value: `${displayPosts} Posts Total`, 
                   desc: displayPosts > 0 ? `Active items for ${selectedAnalyticsAccount}` : 'No posts recorded', 
                   color: 'var(--orange-400)' 
                 },
                 { 
-                  label: '(vi) Audience Forecast', 
+                  label: 'Audience Forecast', 
                   value: displayFollowers > 0 ? `+${Math.round(displayFollowers * 0.25).toLocaleString()} Subs` : '+0 Subs', 
                   desc: '90-Day Projected milestone', 
                   color: 'var(--rose-400)' 
@@ -3739,6 +3846,24 @@ export default function Dashboard({ user, onBack }) {
                       📘 {connectedFacebookTitle || 'Facebook Page'}
                     </button>
                   )}
+
+                  {connectedTwitterUsername && (
+                    <button
+                      onClick={() => setSelectedAnalyticsAccount('twitter')}
+                      style={{
+                        padding: '0.4rem 0.85rem',
+                        borderRadius: '0.5rem',
+                        fontWeight: 700,
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                        border: '1px solid var(--border-color)',
+                        background: selectedAnalyticsAccount === 'twitter' ? '#1da1f2' : 'var(--card-muted-bg)',
+                        color: selectedAnalyticsAccount === 'twitter' ? '#fff' : 'var(--text-secondary)'
+                      }}
+                    >
+                      🐦 {connectedTwitterDisplayName || 'Twitter Profile'}
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -3819,6 +3944,25 @@ export default function Dashboard({ user, onBack }) {
                     <span>Reach: <strong style={{ color: 'var(--text-primary)' }}>{realFbReach.toLocaleString()}</strong></span>
                   </div>
                 </div>
+
+                {/* Twitter Card */}
+                <div style={{ background: 'var(--card-muted-bg)', border: `1px solid ${selectedAnalyticsAccount === 'twitter' ? '#1da1f2' : 'var(--border-color)'}`, borderRadius: '0.75rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 800, fontSize: '0.85rem', color: '#1da1f2' }}>
+                      <span>🐦</span> Twitter Profile
+                    </div>
+                    <span style={{ fontSize: '0.65rem', background: connectedTwitterUsername ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: connectedTwitterUsername ? 'var(--emerald-400)' : 'var(--rose-400)', border: `1px solid ${connectedTwitterUsername ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`, padding: '0.1rem 0.4rem', borderRadius: '0.25rem', fontWeight: 700 }}>
+                      {connectedTwitterUsername ? '🟢 LINKED' : '🔴 NOT LINKED'}
+                    </span>
+                  </div>
+                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                    {connectedTwitterDisplayName || (connectedTwitterUsername ? connectedTwitterUsername : 'No profile linked')}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    <span>Followers: <strong style={{ color: 'var(--text-primary)' }}>{connectedTwitterFollowers.toLocaleString()}</strong></span>
+                    <span>Tweets: <strong style={{ color: 'var(--text-primary)' }}>{connectedTwitterTweets.toLocaleString()}</strong></span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -3826,37 +3970,37 @@ export default function Dashboard({ user, onBack }) {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(13rem, 1fr))', gap: '1.25rem' }}>
               {[
                 { 
-                  label: '(i) Follower Growth', 
+                  label: 'Follower Growth', 
                   value: displayFollowers > 0 ? `${displayFollowers.toLocaleString()} Total` : '0 Connected', 
                   desc: displayAccountLabel, 
                   color: 'var(--emerald-400)' 
                 },
                 { 
-                  label: '(ii) Demographics', 
+                  label: 'Demographics', 
                   value: displayFollowers > 0 ? '18 - 24 yrs' : 'N/A', 
                   desc: displayFollowers > 0 ? `Primary Age Bracket (${getProfileDemographics()[0]?.percent || 0}%)` : 'Connect accounts to view', 
                   color: 'var(--brand-400)' 
                 },
                 { 
-                  label: '(iii) Engagement Insights', 
+                  label: 'Engagement Insights', 
                   value: `${(realIgEngagement || realFbEngagement || (displayFollowers > 0 ? 4.8 : 0)).toFixed(2)}% Avg`, 
                   desc: displayFollowers > 0 ? 'Live engagement rate' : 'No activity logged', 
                   color: 'var(--indigo-400)' 
                 },
                 { 
-                  label: '(iv) Reach Analysis', 
+                  label: 'Reach Analysis', 
                   value: displayImpressions > 0 ? `${(Math.round(displayImpressions * 0.35) > 1000000 ? (displayImpressions * 0.35 / 1000000).toFixed(1) + 'M' : Math.round(displayImpressions * 0.35 / 1000) + 'K')} Unique` : '0 Unique', 
                   desc: 'Unique viewer expansion', 
                   color: 'var(--blue-400)' 
                 },
                 { 
-                  label: '(v) Impressions Tracking', 
+                  label: 'Impressions Tracking', 
                   value: displayImpressions > 0 ? `${(displayImpressions > 1000000 ? (displayImpressions / 1000000).toFixed(1) + 'M' : (displayImpressions / 1000).toFixed(1) + 'K')} Total` : '0 Views', 
                   desc: displayImpressions > 0 ? 'Live impression count' : 'Connect channels for data', 
                   color: 'var(--orange-400)' 
                 },
                 { 
-                  label: '(vi) Behavior Monitoring', 
+                  label: 'Behavior Monitoring', 
                   value: displayFollowers > 0 ? '62% Returning' : '0% Returning', 
                   desc: displayFollowers > 0 ? '6m 45s avg watch duration' : 'No watch data', 
                   color: 'var(--rose-400)' 

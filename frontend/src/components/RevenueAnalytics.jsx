@@ -365,7 +365,7 @@ export default function RevenueAnalytics({ user }) {
         <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>📈 (iv) Revenue Trends</h3>
+              <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>📈 Revenue Trends</h3>
               <span style={{ fontSize: '0.72rem', background: 'rgba(16,185,129,0.1)', color: 'var(--emerald-400)', padding: '0.2rem 0.5rem', borderRadius: '0.4rem', fontWeight: 700 }}>+24.8% MoM Growth</span>
             </div>
             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.72rem', color: 'var(--text-muted)' }}>Historical earnings performance split over 6 consecutive months.</p>
@@ -446,7 +446,7 @@ export default function RevenueAnalytics({ user }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>💼 (i) Sponsorship & Brand Collaboration Tracking</h3>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>🤝 Sponsorship & Brand Collaboration Tracking</h3>
               <span style={{ fontSize: '0.7rem', background: 'rgba(139,92,246,0.15)', color: 'var(--brand-300)', padding: '0.15rem 0.5rem', borderRadius: '0.4rem', fontWeight: 700 }}>
                 {filteredDeals.length} Deals Active
               </span>
@@ -592,14 +592,14 @@ export default function RevenueAnalytics({ user }) {
       </div>
 
       {/* ========================================================
-          SECTION (ii): AD REVENUE MONITORING MODULE
+          SECTION: AD REVENUE MONITORING MODULE
          ======================================================== */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(22rem, 1fr))', gap: '1.5rem' }}>
         
         {/* Platform Ad Monetization Performance */}
         <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
-            <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>📺 (ii) Ad Revenue & CPM/RPM Monitoring</h3>
+            <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>📺 Ad Revenue & CPM/RPM Monitoring</h3>
             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.72rem', color: 'var(--text-muted)' }}>Platform ad network breakdown and CPM rates.</p>
           </div>
 
@@ -661,14 +661,14 @@ export default function RevenueAnalytics({ user }) {
       </div>
 
       {/* ========================================================
-          SECTION (iii) & (v): EARNINGS REPORTS & MONETIZATION ANALYTICS
+          SECTION: EARNINGS REPORTS & MONETIZATION ANALYTICS
          ======================================================== */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(22rem, 1fr))', gap: '1.5rem' }}>
         
-        {/* (iii) Earnings Reports & Tax Provision */}
+        {/* Earnings Reports & Tax Provision */}
         <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
-            <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>📊 (iii) Earnings Reports & Tax Provision</h3>
+            <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>📊 Earnings Reports & Tax Provision</h3>
             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.72rem', color: 'var(--text-muted)' }}>Monthly gross income vs deductions and net payout breakdown.</p>
           </div>
 
@@ -700,10 +700,10 @@ export default function RevenueAnalytics({ user }) {
           </div>
         </div>
 
-        {/* (v) Monetization Analytics & Content Format Matrix */}
+        {/* Monetization Analytics & Content Format Matrix */}
         <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
-            <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>⚡ (v) Monetization Analytics</h3>
+            <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>💡 Monetization Analytics</h3>
             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.72rem', color: 'var(--text-muted)' }}>Revenue per content format and audience yield efficiencies.</p>
           </div>
 
@@ -732,7 +732,7 @@ export default function RevenueAnalytics({ user }) {
       <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>🧠 (vi) Financial Insights & Smart Alerts</h3>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>🧠 Financial Insights & Smart Alerts</h3>
             <span style={{ fontSize: '0.7rem', background: 'rgba(16,185,129,0.15)', color: 'var(--emerald-400)', padding: '0.15rem 0.5rem', borderRadius: '0.4rem', fontWeight: 700 }}>4 Suggestions Active</span>
           </div>
           <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Automated financial guidance to maximize yield and manage cash flow.</p>
