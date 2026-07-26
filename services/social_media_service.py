@@ -2,7 +2,7 @@
 services/social_media_service.py — Social Media Integration Orchestrator
 
 Coordinates OAuth flows, account management, and analytics fetching
-across all supported platforms (Instagram, YouTube, LinkedIn, Facebook).
+across all supported platforms (Instagram, YouTube, LinkedIn, Facebook, X/Twitter).
 
 Dispatches to platform-specific clients and persists results via
 SocialMediaRepository.
@@ -18,6 +18,7 @@ from services.platforms.instagram import InstagramClient
 from services.platforms.youtube import YouTubeClient
 from services.platforms.linkedin import LinkedInClient
 from services.platforms.facebook import FacebookClient
+from services.platforms.x_twitter import XClient
 from utils.analytics import calculate_engagement_rate, calculate_performance_score
 from config import settings
 
@@ -81,9 +82,19 @@ class SocialMediaService:
             return (
                 f"https://www.facebook.com/v21.0/dialog/oauth?"
                 f"client_id={settings.META_APP_ID}"
-                f"&redirect_uri={settings.META_REDIRECT_URI}"
+                f"&redirect_uri={settings.META_FACEBOOK_REDIRECT_URI}"
                 f"&scope=pages_show_list,pages_read_engagement,read_insights"
                 f"&response_type=code"
+            )
+        elif platform == "x":
+            return (
+                f"https://x.com/i/oauth2/authorize?"
+                f"response_type=code"
+                f"&client_id={settings.X_CLIENT_ID}"
+                f"&redirect_uri={settings.X_REDIRECT_URI}"
+                f"&scope=tweet.read users.read offline.access"
+                f"&state=x_oauth"
+                f"&code_challenge=challenge&code_challenge_method=plain"
             )
         raise HTTPException(status_code=400, detail=f"Unsupported platform: {platform}")
 
@@ -152,8 +163,8 @@ class SocialMediaService:
             }
 
         elif platform == "facebook":
-            # Facebook shares the same Meta OAuth as Instagram
-            token_data = await InstagramClient.exchange_code_for_token(code)
+            # Facebook has its own redirect URI, so use FacebookClient for token exchange
+            token_data = await FacebookClient.exchange_code_for_token(code)
             client = FacebookClient(token_data["access_token"])
             pages = await client.get_pages()
             page = pages[0] if pages else {}
@@ -165,6 +176,24 @@ class SocialMediaService:
                 "accessToken": token_data["access_token"],
                 "pageAccessToken": page.get("access_token", ""),
                 "tokenExpiry": datetime.utcnow() + timedelta(seconds=token_data.get("expires_in", 5184000)),
+                "isActive": True,
+            }
+
+        elif platform == "x":
+            token_data = await XClient.exchange_code_for_token(code, code_verifier="challenge")
+            client = XClient(token_data["access_token"])
+            profile = await client.get_me()
+            metrics = profile.get("public_metrics", {})
+            account_data = {
+                "accountId": profile.get("id", ""),
+                "accountName": profile.get("name", ""),
+                "username": profile.get("username", ""),
+                "followers": metrics.get("followers_count", 0),
+                "profileUrl": f"https://x.com/{profile.get('username', '')}",
+                "profilePicture": profile.get("profile_image_url"),
+                "accessToken": token_data["access_token"],
+                "refreshToken": token_data.get("refresh_token"),
+                "tokenExpiry": datetime.utcnow() + timedelta(seconds=token_data.get("expires_in", 7200)),
                 "isActive": True,
             }
 
@@ -290,6 +319,30 @@ class SocialMediaService:
                 "platform": platform,
                 "accountId": account["accountId"],
                 "insights": insights,
+                "fetchedAt": datetime.utcnow().isoformat(),
+            }
+
+        elif platform == "x":
+            # Check if token needs refresh
+            if account.get("tokenExpiry") and account["tokenExpiry"] < datetime.utcnow():
+                refresh_token = account.get("refreshToken")
+                if refresh_token:
+                    new_tokens = await XClient.refresh_access_token(refresh_token)
+                    access_token = new_tokens["access_token"]
+                    await self.social_repo.update_tokens(creator_id, platform, {
+                        "access_token": access_token,
+                        "refresh_token": new_tokens.get("refresh_token", refresh_token),
+                        "token_expiry": datetime.utcnow() + timedelta(seconds=new_tokens.get("expires_in", 7200)),
+                    })
+
+            client = XClient(access_token)
+            profile = await client.get_me()
+            tweets = await client.get_user_tweets(account["accountId"])
+            return {
+                "platform": platform,
+                "accountId": account["accountId"],
+                "profile_metrics": profile.get("public_metrics", {}),
+                "recent_tweets": tweets,
                 "fetchedAt": datetime.utcnow().isoformat(),
             }
 

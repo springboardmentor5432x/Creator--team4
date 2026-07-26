@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     META_APP_ID: str = ""
     META_APP_SECRET: str = ""
     META_REDIRECT_URI: str = "http://localhost:8000/api/social/callback/instagram"
+    META_FACEBOOK_REDIRECT_URI: str = "http://localhost:8000/api/social/callback/facebook"
 
     # YouTube (Google OAuth + YouTube Data/Analytics API)
     GOOGLE_CLIENT_ID: str = ""
@@ -54,6 +55,11 @@ class Settings(BaseSettings):
     LINKEDIN_CLIENT_ID: str = ""
     LINKEDIN_CLIENT_SECRET: str = ""
     LINKEDIN_REDIRECT_URI: str = "http://localhost:8000/api/social/callback/linkedin"
+
+    # X (Twitter OAuth 2.0)
+    X_CLIENT_ID: str = ""
+    X_CLIENT_SECRET: str = ""
+    X_REDIRECT_URI: str = "http://localhost:8000/api/social/callback/x"
 
     class Config:
         env_file = ".env"

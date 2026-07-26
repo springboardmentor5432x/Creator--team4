@@ -21,6 +21,43 @@ class FacebookClient:
     def __init__(self, access_token: str):
         self.access_token = access_token
 
+    @staticmethod
+    async def exchange_code_for_token(code: str) -> Dict:
+        """
+        Exchange an OAuth authorization code for an access token.
+
+        Uses META_FACEBOOK_REDIRECT_URI (distinct from Instagram's redirect).
+
+        Flow:
+            1. Exchange code → short-lived token
+            2. Exchange short-lived token → long-lived token (~60 days)
+        """
+        async with httpx.AsyncClient() as client:
+            # Step 1: Get short-lived token
+            resp = await client.get(f"{GRAPH_API_BASE}/oauth/access_token", params={
+                "client_id": settings.META_APP_ID,
+                "client_secret": settings.META_APP_SECRET,
+                "redirect_uri": settings.META_FACEBOOK_REDIRECT_URI,
+                "code": code,
+            })
+            resp.raise_for_status()
+            data = resp.json()
+            short_token = data["access_token"]
+
+            # Step 2: Exchange for long-lived token
+            resp2 = await client.get(f"{GRAPH_API_BASE}/oauth/access_token", params={
+                "grant_type": "fb_exchange_token",
+                "client_id": settings.META_APP_ID,
+                "client_secret": settings.META_APP_SECRET,
+                "fb_exchange_token": short_token,
+            })
+            resp2.raise_for_status()
+            long_data = resp2.json()
+            return {
+                "access_token": long_data["access_token"],
+                "expires_in": long_data.get("expires_in", 5184000),  # ~60 days
+            }
+
     async def get_pages(self) -> List[Dict]:
         """
         Fetch Facebook Pages managed by the authenticated user.

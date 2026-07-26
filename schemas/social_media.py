@@ -17,6 +17,7 @@ class PlatformEnum(str, Enum):
     YOUTUBE = "youtube"
     LINKEDIN = "linkedin"
     FACEBOOK = "facebook"
+    X = "x"
 
 
 class OAuthInitRequest(BaseModel):
