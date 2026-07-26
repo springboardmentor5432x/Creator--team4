@@ -186,6 +186,12 @@ export const api = {
       body: JSON.stringify({ title, caption, mediaUrl, platforms, scheduledTime }),
     }),
 
+  editWorkflow: (postId, title, caption, mediaUrl, platforms, scheduledTime) =>
+    request('/workflows/edit/', {
+      method: 'POST',
+      body: JSON.stringify({ postId, title, caption, mediaUrl, platforms, scheduledTime }),
+    }),
+
   publishWorkflow: (postId) =>
     request('/workflows/publish/', {
       method: 'POST',

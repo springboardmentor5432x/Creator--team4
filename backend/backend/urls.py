@@ -13,7 +13,7 @@ from accounts.views import (
     facebook_connect_view, facebook_disconnect_view, facebook_analytics_view,
     twitter_connect_view, twitter_disconnect_view, twitter_analytics_view,
     list_reports_view, generate_report_view, delete_report_view,
-    list_workflows_view, create_workflow_view, publish_workflow_view, delete_workflow_view,
+    list_workflows_view, create_workflow_view, edit_workflow_view, publish_workflow_view, delete_workflow_view,
     list_deals_view,
     create_deal_view,
     delete_deal_view,
@@ -70,6 +70,7 @@ urlpatterns = [
     # Workflows
     path('api/workflows/', list_workflows_view, name='api_list_workflows'),
     path('api/workflows/create/', create_workflow_view, name='api_create_workflow'),
+    path('api/workflows/edit/', edit_workflow_view, name='api_edit_workflow'),
     path('api/workflows/publish/', publish_workflow_view, name='api_publish_workflow'),
     path('api/workflows/delete/', delete_workflow_view, name='api_delete_workflow'),
     

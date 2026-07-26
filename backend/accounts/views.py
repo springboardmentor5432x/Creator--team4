@@ -2184,6 +2184,66 @@ def create_workflow_view(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 @csrf_exempt
+def edit_workflow_view(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST method is allowed'}, status=405)
+    try:
+        user = get_authenticated_user(request)
+        data = json.loads(request.body)
+        post_id = data.get('postId')
+        if not post_id:
+            return JsonResponse({'error': 'Post ID is required'}, status=400)
+            
+        post = WorkflowPost.objects.filter(id=post_id, user=user).first()
+        if not post:
+            return JsonResponse({'error': 'Workflow not found'}, status=404)
+        if post.status == 'Published':
+            return JsonResponse({'error': 'Cannot edit an already published workflow'}, status=400)
+            
+        title = data.get('title', '').strip()
+        caption = data.get('caption', '').strip()
+        media_url = data.get('mediaUrl', '').strip()
+        selected_platforms = data.get('platforms', [])
+        scheduled_time_str = data.get('scheduledTime')  # ISO string or None
+        
+        if not title:
+            return JsonResponse({'error': 'Post title is required'}, status=400)
+        if not selected_platforms:
+            return JsonResponse({'error': 'At least one target platform must be selected'}, status=400)
+            
+        scheduled_time = None
+        if scheduled_time_str:
+            from django.utils.dateparse import parse_datetime
+            scheduled_time = parse_datetime(scheduled_time_str)
+            status = 'Scheduled'
+        else:
+            status = 'Draft'
+            
+        post.title = title
+        post.caption = caption
+        post.media_url = media_url
+        post.selected_platforms = ','.join(selected_platforms)
+        post.scheduled_time = scheduled_time
+        post.status = status
+        post.save()
+        
+        return JsonResponse({
+            'message': 'Workflow updated successfully',
+            'post': {
+                'id': post.id,
+                'title': post.title,
+                'caption': post.caption,
+                'media_url': post.media_url,
+                'selected_platforms': post.selected_platforms.split(','),
+                'scheduled_time': post.scheduled_time.isoformat() if post.scheduled_time else None,
+                'status': post.status,
+                'created_at': post.created_at.isoformat()
+            }
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt
 def publish_workflow_view(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Only POST method is allowed'}, status=405)

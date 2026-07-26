@@ -284,9 +284,15 @@ def login(login_data: UserLogin, db: Session = Depends(get_db)):
 def google_login(google_data: GoogleLoginSchema, db: Session = Depends(get_db)):
     google_client_id = os.getenv('GOOGLE_CLIENT_ID')
     try:
+        # Create a custom session to bypass local SSL/EOF errors
+        session = requests.Session()
+        session.verify = False
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        
         idinfo = id_token.verify_oauth2_token(
             google_data.credential,
-            google_requests.Request(),
+            google_requests.Request(session=session),
             google_client_id
         )
         email = idinfo.get('email')

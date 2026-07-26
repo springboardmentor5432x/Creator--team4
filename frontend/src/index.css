@@ -179,3 +179,26 @@ body {
     display: flex !important;
   }
 }
+
+/* =========================================
+   Print Styles
+   ========================================= */
+@media print {
+  :root {
+    --bg-color: #ffffff !important;
+    --card-bg: #ffffff !important;
+    --card-muted-bg: #f8f9fa !important;
+    --border-color: #e2e8f0 !important;
+    --text-primary: #000000 !important;
+    --text-secondary: #333333 !important;
+    --text-muted: #555555 !important;
+  }
+  .print-hide-sidebar { display: none !important; }
+  .print-main-content { overflow: visible !important; height: auto !important; background: white !important; }
+  body, html, #root { height: auto !important; background: white !important; }
+  .dashboard-container { height: auto !important; overflow: visible !important; display: block !important; }
+  * { color: black !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-shadow: none !important; }
+  /* Specific overrides */
+  div[style*="linear-gradient"] { background: none !important; color: black !important; border: 1px solid #ccc !important; }
+}
+
