@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 
-export default function RevenueAnalytics({ user }) {
+export default function RevenueAnalytics({
+  user,
+  connectedYtData,
+  connectedInstagramFollowers,
+  connectedFacebookFollowers,
+  connectedTwitterFollowers
+}) {
   // State for Time Period
   const [timePeriod, setTimePeriod] = useState('30d'); // '7d', '30d', '90d', '1y'
   // State for Selected Revenue Source Filter
@@ -45,6 +51,27 @@ export default function RevenueAnalytics({ user }) {
       setLoadingDeals(false);
     }
   };
+
+  // Dynamic AdSense & Monetization RPM calculation
+  const isYtConnected = !!(connectedYtData || user?.youtube_channel_id);
+  const isIgConnected = !!connectedInstagramFollowers;
+  const isFbConnected = !!connectedFacebookFollowers;
+  const isTwConnected = !!connectedTwitterFollowers;
+
+  const ytViews = isYtConnected ? (parseInt(connectedYtData?.channel?.views, 10) || 0) : 0;
+  const calculatedAdRevenue = Math.round((ytViews * 0.0035)); // $3.50 RPM per 1,000 views
+
+  // Calculate Aggregated Metrics strictly from deals and real ad revenue
+  const totalSponsorships = deals.filter(d => d.source === 'Sponsorships' || d.source === 'Brand Collaborations').reduce((acc, d) => acc + d.payout, 0);
+  const totalAdRevenue = calculatedAdRevenue;
+  const totalAffiliate = deals.filter(d => d.source === 'Affiliate Marketing').reduce((acc, d) => acc + d.payout, 0);
+  const totalBrandCollabs = deals.filter(d => d.source === 'Brand Collaborations').reduce((acc, d) => acc + d.payout, 0);
+  const totalSubscriptions = deals.filter(d => d.source === 'Subscription Revenue').reduce((acc, d) => acc + d.payout, 0);
+
+  const grossTotal = totalSponsorships + totalAdRevenue + totalAffiliate + totalSubscriptions;
+  const estPlatformFees = grossTotal > 0 ? Math.round(grossTotal * 0.08) : 0; // 8% avg platform fee
+  const estTaxReserve = grossTotal > 0 ? Math.round((grossTotal - estPlatformFees) * 0.22) : 0; // 22% estimated tax
+  const netPayout = grossTotal > 0 ? (grossTotal - estPlatformFees - estTaxReserve) : 0;
 
   // Handle Adding New Sponsorship Deal
   const handleAddDealSubmit = async (e) => {
@@ -138,18 +165,6 @@ export default function RevenueAnalytics({ user }) {
     setExportMessage('✅ Financial Earnings Report downloaded successfully!');
     setTimeout(() => setExportMessage(''), 4000);
   };
-
-  // Calculate Aggregated Metrics
-  const totalSponsorships = deals.filter(d => d.source === 'Sponsorships' || d.source === 'Brand Collaborations').reduce((acc, d) => acc + d.payout, 0);
-  const totalAdRevenue = 6420;
-  const totalAffiliate = deals.filter(d => d.source === 'Affiliate Marketing').reduce((acc, d) => acc + d.payout, 0) + 1450;
-  const totalBrandCollabs = deals.filter(d => d.source === 'Brand Collaborations').reduce((acc, d) => acc + d.payout, 0);
-  const totalSubscriptions = deals.filter(d => d.source === 'Subscription Revenue').reduce((acc, d) => acc + d.payout, 0) + 850;
-
-  const grossTotal = totalSponsorships + totalAdRevenue + totalAffiliate + totalSubscriptions;
-  const estPlatformFees = Math.round(grossTotal * 0.08); // 8% avg platform fee
-  const estTaxReserve = Math.round((grossTotal - estPlatformFees) * 0.22); // 22% estimated tax
-  const netPayout = grossTotal - estPlatformFees - estTaxReserve;
 
   // Filtered Deals Table List
   const filteredDeals = deals.filter(deal => {
@@ -319,22 +334,22 @@ export default function RevenueAnalytics({ user }) {
           {
             title: 'Gross Earnings',
             value: `$${grossTotal.toLocaleString()}`,
-            subtext: '+24.8% vs last month',
-            color: 'var(--emerald-400)',
+            subtext: grossTotal > 0 ? '+24.8% vs last month' : '0% vs last month',
+            color: grossTotal > 0 ? 'var(--emerald-400)' : 'var(--text-muted)',
             icon: '💵'
           },
           {
             title: 'Net Payout (Retained)',
             value: `$${netPayout.toLocaleString()}`,
-            subtext: `~${Math.round((netPayout / grossTotal) * 100)}% after fees & tax provision`,
-            color: 'var(--brand-400)',
+            subtext: grossTotal > 0 ? `~${Math.round((netPayout / grossTotal) * 100)}% after fees & tax provision` : 'No payout accrued',
+            color: grossTotal > 0 ? 'var(--brand-400)' : 'var(--text-muted)',
             icon: '🏦'
           },
           {
             title: 'Average RPM (Revenue / 1k)',
-            value: '$6.85',
-            subtext: '+$0.92 increase across platforms',
-            color: 'var(--indigo-400)',
+            value: grossTotal > 0 ? '$6.85' : '$0.00',
+            subtext: grossTotal > 0 ? '+$0.92 increase across platforms' : 'No active platforms',
+            color: grossTotal > 0 ? 'var(--indigo-400)' : 'var(--text-muted)',
             icon: '📈'
           },
           {
@@ -366,19 +381,21 @@ export default function RevenueAnalytics({ user }) {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>📈 Revenue Trends</h3>
-              <span style={{ fontSize: '0.72rem', background: 'rgba(16,185,129,0.1)', color: 'var(--emerald-400)', padding: '0.2rem 0.5rem', borderRadius: '0.4rem', fontWeight: 700 }}>+24.8% MoM Growth</span>
+              <span style={{ fontSize: '0.72rem', background: grossTotal > 0 ? 'rgba(16,185,129,0.1)' : 'rgba(100,100,100,0.15)', color: grossTotal > 0 ? 'var(--emerald-400)' : 'var(--text-muted)', padding: '0.2rem 0.5rem', borderRadius: '0.4rem', fontWeight: 700 }}>
+                {grossTotal > 0 ? '+24.8% MoM Growth' : '0% Growth'}
+              </span>
             </div>
             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.72rem', color: 'var(--text-muted)' }}>Historical earnings performance split over 6 consecutive months.</p>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem', height: '12rem', paddingTop: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>
             {[
-              { month: 'Feb', amount: 9400, height: '50%' },
-              { month: 'Mar', amount: 11200, height: '60%' },
-              { month: 'Apr', amount: 10800, height: '58%' },
-              { month: 'May', amount: 13500, height: '72%' },
-              { month: 'Jun', amount: 15100, height: '82%' },
-              { month: 'Jul (Est)', amount: 18460, height: '98%', current: true },
+              { month: 'Feb', amount: grossTotal > 0 ? Math.round(grossTotal * 0.5) : 0, height: grossTotal > 0 ? '50%' : '0%' },
+              { month: 'Mar', amount: grossTotal > 0 ? Math.round(grossTotal * 0.6) : 0, height: grossTotal > 0 ? '60%' : '0%' },
+              { month: 'Apr', amount: grossTotal > 0 ? Math.round(grossTotal * 0.58) : 0, height: grossTotal > 0 ? '58%' : '0%' },
+              { month: 'May', amount: grossTotal > 0 ? Math.round(grossTotal * 0.72) : 0, height: grossTotal > 0 ? '72%' : '0%' },
+              { month: 'Jun', amount: grossTotal > 0 ? Math.round(grossTotal * 0.82) : 0, height: grossTotal > 0 ? '82%' : '0%' },
+              { month: 'Jul (Est)', amount: grossTotal, height: grossTotal > 0 ? '98%' : '0%', current: true },
             ].map(item => (
               <div key={item.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', height: '100%', justifyContent: 'flex-end' }}>
                 <span style={{ fontSize: '0.68rem', fontWeight: 700, color: item.current ? 'var(--brand-300)' : 'var(--text-muted)' }}>${(item.amount / 1000).toFixed(1)}k</span>
@@ -405,7 +422,7 @@ export default function RevenueAnalytics({ user }) {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)', paddingTop: '0.2rem' }}>
             <span>Target Monthly Run-Rate: $20,000</span>
-            <span>Progress: 92% Achieved</span>
+            <span>Progress: {grossTotal > 0 ? Math.min(100, Math.round((grossTotal / 20000) * 100)) : 0}% Achieved</span>
           </div>
         </div>
 
@@ -418,10 +435,10 @@ export default function RevenueAnalytics({ user }) {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
             {[
-              { label: 'Sponsorships & Brand Collabs', percent: 48, amount: `$${(totalSponsorships + totalBrandCollabs).toLocaleString()}`, color: 'var(--brand-500)' },
-              { label: 'Ad Revenue (YouTube/Meta)', percent: 35, amount: `$${totalAdRevenue.toLocaleString()}`, color: 'var(--emerald-500)' },
-              { label: 'Affiliate Marketing', percent: 11, amount: `$${totalAffiliate.toLocaleString()}`, color: 'var(--amber-500)' },
-              { label: 'Subscriptions (Patreon/Members)', percent: 6, amount: `$${totalSubscriptions.toLocaleString()}`, color: 'var(--rose-500)' }
+              { label: 'Sponsorships & Brand Collabs', percent: grossTotal > 0 ? Math.round(((totalSponsorships + totalBrandCollabs) / grossTotal) * 100) : 0, amount: `$${(totalSponsorships + totalBrandCollabs).toLocaleString()}`, color: 'var(--brand-500)' },
+              { label: 'Ad Revenue (YouTube/Meta)', percent: grossTotal > 0 ? Math.round((totalAdRevenue / grossTotal) * 100) : 0, amount: `$${totalAdRevenue.toLocaleString()}`, color: 'var(--emerald-500)' },
+              { label: 'Affiliate Marketing', percent: grossTotal > 0 ? Math.round((totalAffiliate / grossTotal) * 100) : 0, amount: `$${totalAffiliate.toLocaleString()}`, color: 'var(--amber-500)' },
+              { label: 'Subscriptions (Patreon/Members)', percent: grossTotal > 0 ? Math.round((totalSubscriptions / grossTotal) * 100) : 0, amount: `$${totalSubscriptions.toLocaleString()}`, color: 'var(--rose-500)' }
             ].map(src => (
               <div key={src.label} style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700 }}>
@@ -605,21 +622,24 @@ export default function RevenueAnalytics({ user }) {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
             {[
-              { platform: 'YouTube Partner AdSense', cpm: '$8.40', rpm: '$5.20', impressions: '1.2M', payout: '$6,240', color: '#ff0000', icon: '▶️' },
-              { platform: 'Instagram Reels Play Bonus', cpm: '$3.50', rpm: '$2.10', impressions: '450K', payout: '$945', color: '#e1306c', icon: '📸' },
-              { platform: 'Facebook In-Stream Ads', cpm: '$4.20', rpm: '$2.60', impressions: '210K', payout: '$546', color: '#1877f2', icon: '📘' },
-              { platform: 'LinkedIn Video Ad Share', cpm: '$14.20', rpm: '$9.80', impressions: '85K', payout: '$833', color: '#0077b5', icon: '💼' },
+              { platform: 'YouTube Partner AdSense', cpm: isYtConnected ? '$8.40' : '$0.00', rpm: isYtConnected ? '$5.20' : '$0.00', impressions: isYtConnected && ytViews > 0 ? `${(ytViews / 1e6).toFixed(1)}M` : '0', payout: `$${calculatedAdRevenue.toLocaleString()}`, color: '#ef4444', icon: '▶️', isConn: isYtConnected },
+              { platform: 'Twitter / X Creator Subscriptions', cpm: isTwConnected ? '$5.10' : '$0.00', rpm: isTwConnected ? '$3.20' : '$0.00', impressions: '0', payout: '$0', color: '#1da1f2', icon: '🐦', isConn: isTwConnected },
+              { platform: 'Instagram Reels Play Bonus', cpm: isIgConnected ? '$3.50' : '$0.00', rpm: isIgConnected ? '$2.10' : '$0.00', impressions: '0', payout: '$0', color: '#e1306c', icon: '📸', isConn: isIgConnected },
+              { platform: 'Facebook In-Stream Ads', cpm: isFbConnected ? '$4.20' : '$0.00', rpm: isFbConnected ? '$2.60' : '$0.00', impressions: '0', payout: '$0', color: '#1877f2', icon: '📘', isConn: isFbConnected },
+              { platform: 'LinkedIn Video Ad Share', cpm: '$0.00', rpm: '$0.00', impressions: '0', payout: '$0', color: '#0077b5', icon: '💼', isConn: false },
             ].map(ad => (
-              <div key={ad.platform} style={{ background: 'var(--card-muted-bg)', border: '1px solid var(--border-color)', borderRadius: '0.75rem', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+              <div key={ad.platform} style={{ background: 'var(--card-muted-bg)', border: '1px solid var(--border-color)', opacity: ad.isConn ? 1 : 0.65, borderRadius: '0.75rem', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <span style={{ fontSize: '1.4rem' }}>{ad.icon}</span>
                   <div>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>{ad.platform}</div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      {ad.platform} <span style={{ fontSize: '0.65rem', marginLeft: '0.3rem', color: ad.isConn ? 'var(--emerald-400)' : 'var(--text-muted)' }}>({ad.isConn ? 'Connected' : 'Not Connected'})</span>
+                    </div>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>CPM: <strong style={{ color: 'var(--text-secondary)' }}>{ad.cpm}</strong> | RPM: <strong style={{ color: 'var(--emerald-400)' }}>{ad.rpm}</strong></div>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>{ad.payout}</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: ad.isConn ? 'var(--text-primary)' : 'var(--text-muted)' }}>{ad.payout}</div>
                   <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{ad.impressions} Impr.</div>
                 </div>
               </div>
@@ -635,26 +655,31 @@ export default function RevenueAnalytics({ user }) {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {[
-              { title: 'Full Stack Web Dev Roadmap 2026', views: '480,000 views', rpm: '$8.40', earnings: '$4,032', type: 'YouTube Long-form' },
-              { title: 'Build AI Apps with Python & FastAPI', views: '210,000 views', rpm: '$7.80', earnings: '$1,638', type: 'YouTube Long-form' },
-              { title: 'Top 5 VSCode Extensions You Need', views: '320,000 views', rpm: '$3.20', earnings: '$1,024', type: 'Instagram Reel' },
-              { title: 'How I Scaled My Creator Business', views: '95,000 views', rpm: '$11.50', earnings: '$1,092', type: 'LinkedIn Video' }
-            ].map((content, idx) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 0.85rem', background: 'var(--bg-color)', borderRadius: '0.6rem', border: '1px solid var(--border-color)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--brand-300)', width: '1.2rem' }}>#{idx + 1}</span>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '14rem' }}>{content.title}</div>
-                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{content.type} • {content.views}</div>
+            {isYtConnected && connectedYtData?.videos && connectedYtData.videos.length > 0 ? (
+              connectedYtData.videos.slice(0, 4).map((v, idx) => {
+                const views = parseInt(v.views || 0, 10);
+                const estRev = Math.round((views / 1000) * 8.4 * 0.55);
+                return (
+                  <div key={v.id || idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 0.85rem', background: 'var(--bg-color)', borderRadius: '0.6rem', border: '1px solid var(--border-color)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--brand-300)', width: '1.2rem' }}>#{idx + 1}</span>
+                      <div>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '14rem' }}>{v.title || 'YouTube Video'}</div>
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>YouTube Long-form • {views.toLocaleString()} views</div>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--emerald-400)' }}>${estRev.toLocaleString()}</div>
+                      <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>RPM: $4.62</div>
+                    </div>
                   </div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--emerald-400)' }}>{content.earnings}</div>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>RPM: {content.rpm}</div>
-                </div>
+                );
+              })
+            ) : (
+              <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                No monetization data found. Connect a YouTube or Meta account to view top earning content.
               </div>
-            ))}
+            )}
           </div>
         </div>
 

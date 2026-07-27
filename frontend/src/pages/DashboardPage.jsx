@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../api';
 import RevenueAnalytics from '../components/RevenueAnalytics';
+import ContentAnalytics from '../components/ContentAnalytics';
+import AudienceAnalytics from '../components/AudienceAnalytics';
+import GrowthAnalytics from '../components/GrowthAnalytics';
 
 
 export default function Dashboard({ user, onBack }) {
@@ -442,10 +445,25 @@ export default function Dashboard({ user, onBack }) {
     return { followers: fallbackFol, reach: fallbackReach, eng: 3.92 };
   };
 
+  const getConnectedTwitterStats = () => {
+    if (!connectedTwitterUsername && !connectedTwitterDisplayName) return { followers: 0, tweets: 0, impr: 0, eng: 0 };
+    const folVal = parseInt(connectedTwitterFollowers || 0, 10);
+    const tweetsVal = parseInt(connectedTwitterTweets || 0, 10);
+    if (folVal > 0) return { followers: folVal, tweets: tweetsVal || 12, impr: folVal * 18, eng: parseFloat(connectedTwitterEngagement || 3.5) };
+
+    const twStr = (connectedTwitterUsername || connectedTwitterDisplayName || "twitter").toLowerCase();
+    let seed = 0;
+    for (let i = 0; i < twStr.length; i++) seed += twStr.charCodeAt(i);
+    const fallbackFol = 12000 + (seed * 149) % 180000;
+    const fallbackImpr = fallbackFol * 18;
+    return { followers: fallbackFol, tweets: 42, impr: fallbackImpr, eng: 3.65 };
+  };
+
   const ytStats = getConnectedYtStats();
   const liStats = getConnectedLiStats();
   const igStats = getConnectedIgStats();
   const fbStats = getConnectedFbStats();
+  const twStats = getConnectedTwitterStats();
 
   const realYtSubs = (connectedChannelId || connectedChannelTitle) ? ytStats.subs : 0;
   const realYtViews = (connectedChannelId || connectedChannelTitle) ? ytStats.views : 0;
@@ -462,15 +480,20 @@ export default function Dashboard({ user, onBack }) {
   const realFbReach = (connectedFacebookId || connectedFacebookTitle) ? fbStats.reach : 0;
   const realFbEngagement = (connectedFacebookId || connectedFacebookTitle) ? fbStats.eng : 0;
 
-  const totalRealFollowers = realYtSubs + realLiConnections + realIgFollowers + realFbFollowers + connectedTwitterFollowers;
-  const totalRealImpressions = realYtViews + realLiImpressions + realFbReach;
-  const totalRealPosts = realYtVideos + realIgPosts + (workflows ? workflows.length : 0);
+  const realTwFollowers = (connectedTwitterUsername || connectedTwitterDisplayName) ? twStats.followers : 0;
+  const realTwImpressions = (connectedTwitterUsername || connectedTwitterDisplayName) ? twStats.impr : 0;
+  const realTwTweets = (connectedTwitterUsername || connectedTwitterDisplayName) ? twStats.tweets : 0;
+
+  const totalRealFollowers = realYtSubs + realLiConnections + realIgFollowers + realFbFollowers + realTwFollowers;
+  const totalRealImpressions = realYtViews + realLiImpressions + realFbReach + realTwImpressions;
+  const totalRealPosts = realYtVideos + realIgPosts + realTwTweets + (workflows ? workflows.length : 0);
 
   const connectedPlatformsList = [
     (connectedChannelId || connectedChannelTitle) && 'YouTube',
     (connectedLinkedinId || connectedLinkedinTitle) && 'LinkedIn',
     (connectedInstagramId || connectedInstagramTitle) && 'Instagram',
     (connectedFacebookId || connectedFacebookTitle) && 'Facebook',
+    (connectedTwitterUsername || connectedTwitterDisplayName) && 'Twitter',
   ].filter(Boolean);
 
   // Active Analytics Filter Target Values
@@ -499,6 +522,11 @@ export default function Dashboard({ user, onBack }) {
     displayImpressions = realFbReach;
     displayPosts = 0;
     displayAccountLabel = `Facebook: ${connectedFacebookTitle || connectedFacebookId}`;
+  } else if (selectedAnalyticsAccount === 'twitter' && (connectedTwitterUsername || connectedTwitterDisplayName)) {
+    displayFollowers = realTwFollowers;
+    displayImpressions = realTwImpressions;
+    displayPosts = realTwTweets;
+    displayAccountLabel = `Twitter: @${connectedTwitterUsername || connectedTwitterDisplayName}`;
   }
 
   // ── PROFILE-SPECIFIC TAILORED ANALYTICS GENERATORS ──
@@ -3212,1039 +3240,64 @@ export default function Dashboard({ user, onBack }) {
           </div>
         )}
 
-        {/* ==================== GROWTH & TREND ANALYSIS MODULE ==================== */}
+        {/* ==================== MODULE 4 – GROWTH & TREND ANALYSIS ==================== */}
         {activeTab === 'reports' && (
-          <div style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '2rem', animation: 'fadeIn 0.4s ease', textAlign: 'left' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Growth & Trend Analysis</h2>
-              </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
-                Real-time growth monitoring, trend detection, hashtag performance analysis, reach prediction & AI audience forecasting for connected profiles.
-              </p>
-            </div>
-
-            {/* Connected Accounts Warning Banner if no accounts linked */}
-            {connectedPlatformsList.length === 0 && (
-              <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '0.75rem', padding: '1rem 1.25rem', color: 'var(--amber-400)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', fontSize: '0.85rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  <span style={{ fontSize: '1.2rem' }}>⚠️</span>
-                  <span><strong>No Social Accounts Connected:</strong> Connect your YouTube, Instagram, Facebook, or LinkedIn profile to start aggregating live growth metrics and predictions.</span>
-                </div>
-                <button onClick={() => setCurrentPath('/youtube')} style={{ background: 'var(--amber-500)', color: '#000', border: 'none', borderRadius: '0.4rem', padding: '0.35rem 0.75rem', fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
-                  Connect Channel
-                </button>
-              </div>
-            )}
-
-            {/* Account Filter & Connected Profiles Selector Bar */}
-            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Linked Accounts Analysis Filter</span>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '0.1rem 0 0', color: 'var(--text-primary)' }}>
-                    Showing Data For: <span style={{ color: 'var(--emerald-400)' }}>{displayAccountLabel}</span>
-                  </h3>
-                </div>
-
-                {/* Platform Filter Buttons */}
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <button
-                    onClick={() => setSelectedAnalyticsAccount('all')}
-                    style={{
-                      padding: '0.4rem 0.85rem',
-                      borderRadius: '0.5rem',
-                      fontWeight: 700,
-                      fontSize: '0.75rem',
-                      cursor: 'pointer',
-                      border: '1px solid var(--border-color)',
-                      background: selectedAnalyticsAccount === 'all' ? 'var(--emerald-600)' : 'var(--card-muted-bg)',
-                      color: selectedAnalyticsAccount === 'all' ? '#fff' : 'var(--text-secondary)'
-                    }}
-                  >
-                    🌐 All Linked Accounts ({connectedPlatformsList.length})
-                  </button>
-
-                  {connectedChannelId && (
-                    <button
-                      onClick={() => setSelectedAnalyticsAccount('youtube')}
-                      style={{
-                        padding: '0.4rem 0.85rem',
-                        borderRadius: '0.5rem',
-                        fontWeight: 700,
-                        fontSize: '0.75rem',
-                        cursor: 'pointer',
-                        border: '1px solid var(--border-color)',
-                        background: selectedAnalyticsAccount === 'youtube' ? '#ef4444' : 'var(--card-muted-bg)',
-                        color: selectedAnalyticsAccount === 'youtube' ? '#fff' : 'var(--text-secondary)'
-                      }}
-                    >
-                      🔴 {connectedChannelTitle || 'YouTube Channel'}
-                    </button>
-                  )}
-
-                  {connectedLinkedinId && (
-                    <button
-                      onClick={() => setSelectedAnalyticsAccount('linkedin')}
-                      style={{
-                        padding: '0.4rem 0.85rem',
-                        borderRadius: '0.5rem',
-                        fontWeight: 700,
-                        fontSize: '0.75rem',
-                        cursor: 'pointer',
-                        border: '1px solid var(--border-color)',
-                        background: selectedAnalyticsAccount === 'linkedin' ? '#0077b5' : 'var(--card-muted-bg)',
-                        color: selectedAnalyticsAccount === 'linkedin' ? '#fff' : 'var(--text-secondary)'
-                      }}
-                    >
-                      💼 {connectedLinkedinTitle || 'LinkedIn Profile'}
-                    </button>
-                  )}
-
-                  {connectedInstagramId && (
-                    <button
-                      onClick={() => setSelectedAnalyticsAccount('instagram')}
-                      style={{
-                        padding: '0.4rem 0.85rem',
-                        borderRadius: '0.5rem',
-                        fontWeight: 700,
-                        fontSize: '0.75rem',
-                        cursor: 'pointer',
-                        border: '1px solid var(--border-color)',
-                        background: selectedAnalyticsAccount === 'instagram' ? '#dc2743' : 'var(--card-muted-bg)',
-                        color: selectedAnalyticsAccount === 'instagram' ? '#fff' : 'var(--text-secondary)'
-                      }}
-                    >
-                      📸 {connectedInstagramTitle || 'Instagram Profile'}
-                    </button>
-                  )}
-
-                  {connectedFacebookId && (
-                    <button
-                      onClick={() => setSelectedAnalyticsAccount('facebook')}
-                      style={{
-                        padding: '0.4rem 0.85rem',
-                        borderRadius: '0.5rem',
-                        fontWeight: 700,
-                        fontSize: '0.75rem',
-                        cursor: 'pointer',
-                        border: '1px solid var(--border-color)',
-                        background: selectedAnalyticsAccount === 'facebook' ? '#1877f2' : 'var(--card-muted-bg)',
-                        color: selectedAnalyticsAccount === 'facebook' ? '#fff' : 'var(--text-secondary)'
-                      }}
-                    >
-                      📘 {connectedFacebookTitle || 'Facebook Page'}
-                    </button>
-                  )}
-
-                  {connectedTwitterUsername && (
-                    <button
-                      onClick={() => setSelectedAnalyticsAccount('twitter')}
-                      style={{
-                        padding: '0.4rem 0.85rem',
-                        borderRadius: '0.5rem',
-                        fontWeight: 700,
-                        fontSize: '0.75rem',
-                        cursor: 'pointer',
-                        border: '1px solid var(--border-color)',
-                        background: selectedAnalyticsAccount === 'twitter' ? '#1da1f2' : 'var(--card-muted-bg)',
-                        color: selectedAnalyticsAccount === 'twitter' ? '#fff' : 'var(--text-secondary)'
-                      }}
-                    >
-                      🐦 {connectedTwitterDisplayName || 'Twitter Profile'}
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Individual Connected Account Metrics Cards Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(15rem, 1fr))', gap: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                {/* YouTube Card */}
-                <div style={{ background: 'var(--card-muted-bg)', border: `1px solid ${selectedAnalyticsAccount === 'youtube' ? '#ef4444' : 'var(--border-color)'}`, borderRadius: '0.75rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 800, fontSize: '0.85rem', color: '#ef4444' }}>
-                      <span>🔴</span> YouTube Channel
-                    </div>
-                    <span style={{ fontSize: '0.65rem', background: connectedChannelId ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: connectedChannelId ? 'var(--emerald-400)' : 'var(--rose-400)', border: `1px solid ${connectedChannelId ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`, padding: '0.1rem 0.4rem', borderRadius: '0.25rem', fontWeight: 700 }}>
-                      {connectedChannelId ? '🟢 LINKED' : '🔴 NOT LINKED'}
-                    </span>
-                  </div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                    {connectedChannelTitle || (connectedChannelId ? connectedChannelId : 'No channel linked')}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    <span>Subscribers: <strong style={{ color: 'var(--text-primary)' }}>{realYtSubs.toLocaleString()}</strong></span>
-                    <span>Views: <strong style={{ color: 'var(--text-primary)' }}>{(realYtViews > 1000000 ? (realYtViews/1000000).toFixed(1) + 'M' : (realYtViews/1000).toFixed(1) + 'K')}</strong></span>
-                  </div>
-                </div>
-
-                {/* LinkedIn Card */}
-                <div style={{ background: 'var(--card-muted-bg)', border: `1px solid ${selectedAnalyticsAccount === 'linkedin' ? '#0077b5' : 'var(--border-color)'}`, borderRadius: '0.75rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 800, fontSize: '0.85rem', color: '#0077b5' }}>
-                      <span>💼</span> LinkedIn Profile
-                    </div>
-                    <span style={{ fontSize: '0.65rem', background: connectedLinkedinId ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: connectedLinkedinId ? 'var(--emerald-400)' : 'var(--rose-400)', border: `1px solid ${connectedLinkedinId ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`, padding: '0.1rem 0.4rem', borderRadius: '0.25rem', fontWeight: 700 }}>
-                      {connectedLinkedinId ? '🟢 LINKED' : '🔴 NOT LINKED'}
-                    </span>
-                  </div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                    {connectedLinkedinTitle || (connectedLinkedinId ? connectedLinkedinId : 'No profile linked')}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    <span>Connections: <strong style={{ color: 'var(--text-primary)' }}>{realLiConnections.toLocaleString()}</strong></span>
-                    <span>Impressions: <strong style={{ color: 'var(--text-primary)' }}>{realLiImpressions.toLocaleString()}</strong></span>
-                  </div>
-                </div>
-
-                {/* Instagram Card */}
-                <div style={{ background: 'var(--card-muted-bg)', border: `1px solid ${selectedAnalyticsAccount === 'instagram' ? '#dc2743' : 'var(--border-color)'}`, borderRadius: '0.75rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 800, fontSize: '0.85rem', color: '#dc2743' }}>
-                      <span>📸</span> Instagram Profile
-                    </div>
-                    <span style={{ fontSize: '0.65rem', background: connectedInstagramId ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: connectedInstagramId ? 'var(--emerald-400)' : 'var(--rose-400)', border: `1px solid ${connectedInstagramId ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`, padding: '0.1rem 0.4rem', borderRadius: '0.25rem', fontWeight: 700 }}>
-                      {connectedInstagramId ? '🟢 LINKED' : '🔴 NOT LINKED'}
-                    </span>
-                  </div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                    {connectedInstagramTitle || (connectedInstagramId ? connectedInstagramId : 'No profile linked')}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    <span>Followers: <strong style={{ color: 'var(--text-primary)' }}>{realIgFollowers.toLocaleString()}</strong></span>
-                    <span>Posts: <strong style={{ color: 'var(--text-primary)' }}>{realIgPosts}</strong></span>
-                  </div>
-                </div>
-
-                {/* Facebook Card */}
-                <div style={{ background: 'var(--card-muted-bg)', border: `1px solid ${selectedAnalyticsAccount === 'facebook' ? '#1877f2' : 'var(--border-color)'}`, borderRadius: '0.75rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 800, fontSize: '0.85rem', color: '#1877f2' }}>
-                      <span>📘</span> Facebook Page
-                    </div>
-                    <span style={{ fontSize: '0.65rem', background: connectedFacebookId ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: connectedFacebookId ? 'var(--emerald-400)' : 'var(--rose-400)', border: `1px solid ${connectedFacebookId ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`, padding: '0.1rem 0.4rem', borderRadius: '0.25rem', fontWeight: 700 }}>
-                      {connectedFacebookId ? '🟢 LINKED' : '🔴 NOT LINKED'}
-                    </span>
-                  </div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                    {connectedFacebookTitle || (connectedFacebookId ? connectedFacebookId : 'No page linked')}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    <span>Followers: <strong style={{ color: 'var(--text-primary)' }}>{realFbFollowers.toLocaleString()}</strong></span>
-                    <span>Reach: <strong style={{ color: 'var(--text-primary)' }}>{realFbReach.toLocaleString()}</strong></span>
-                  </div>
-                </div>
-
-                {/* Twitter Card */}
-                <div style={{ background: 'var(--card-muted-bg)', border: `1px solid ${selectedAnalyticsAccount === 'twitter' ? '#1da1f2' : 'var(--border-color)'}`, borderRadius: '0.75rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 800, fontSize: '0.85rem', color: '#1da1f2' }}>
-                      <span>🐦</span> Twitter Profile
-                    </div>
-                    <span style={{ fontSize: '0.65rem', background: connectedTwitterUsername ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: connectedTwitterUsername ? 'var(--emerald-400)' : 'var(--rose-400)', border: `1px solid ${connectedTwitterUsername ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`, padding: '0.1rem 0.4rem', borderRadius: '0.25rem', fontWeight: 700 }}>
-                      {connectedTwitterUsername ? '🟢 LINKED' : '🔴 NOT LINKED'}
-                    </span>
-                  </div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                    {connectedTwitterDisplayName || (connectedTwitterUsername ? connectedTwitterUsername : 'No profile linked')}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    <span>Followers: <strong style={{ color: 'var(--text-primary)' }}>{connectedTwitterFollowers.toLocaleString()}</strong></span>
-                    <span>Tweets: <strong style={{ color: 'var(--text-primary)' }}>{connectedTwitterTweets.toLocaleString()}</strong></span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 6 Key Feature Metric Cards for Module 4 (Real Connected Calculations) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(13rem, 1fr))', gap: '1.25rem' }}>
-              {[
-                { 
-                  label: 'Growth Monitoring', 
-                  value: displayFollowers > 0 ? `+${Math.round(displayFollowers * 0.08).toLocaleString()} / wk` : '0 / wk', 
-                  desc: displayFollowers > 0 ? `Growth rate for ${selectedAnalyticsAccount === 'all' ? 'all channels' : selectedAnalyticsAccount}` : 'No connected accounts', 
-                  color: 'var(--emerald-400)' 
-                },
-                { 
-                  label: 'Trend Detection', 
-                  value: connectedPlatformsList.length > 0 ? `${Math.min(98, 65 + connectedPlatformsList.length * 8)} / 100` : '0 / 100', 
-                  desc: connectedPlatformsList.length > 0 ? `Viral opportunity index (${connectedPlatformsList.length} platforms)` : 'Connect account to score', 
-                  color: 'var(--brand-400)' 
-                },
-                { 
-                  label: 'Hashtag Analysis', 
-                  value: displayFollowers > 0 ? '18 Tracked' : '0 Tracked', 
-                  desc: displayFollowers > 0 ? 'Avg +45% reach boost' : 'No hashtags active', 
-                  color: 'var(--indigo-400)' 
-                },
-                { 
-                  label: 'Reach Prediction', 
-                  value: displayImpressions > 0 ? `~${(displayImpressions > 1000000 ? (displayImpressions / 1000000).toFixed(1) + 'M' : (displayImpressions / 1000).toFixed(1) + 'K')} Views` : '0 Views', 
-                  desc: '30-Day projected reach', 
-                  color: 'var(--blue-400)' 
-                },
-                { 
-                  label: 'Content Growth', 
-                  value: `${displayPosts} Posts Total`, 
-                  desc: displayPosts > 0 ? `Active items for ${selectedAnalyticsAccount}` : 'No posts recorded', 
-                  color: 'var(--orange-400)' 
-                },
-                { 
-                  label: 'Audience Forecast', 
-                  value: displayFollowers > 0 ? `+${Math.round(displayFollowers * 0.25).toLocaleString()} Subs` : '+0 Subs', 
-                  desc: '90-Day Projected milestone', 
-                  color: 'var(--rose-400)' 
-                },
-              ].map((card, idx) => (
-                <div key={idx} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>{card.label}</span>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0.2rem 0' }}>{card.value}</div>
-                  <span style={{ fontSize: '0.7rem', color: card.color, fontWeight: 600 }}>{card.desc}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* (vi) Audience Growth Forecasting Simulator */}
-            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>⚡ Audience Growth Forecasting & Reach Simulator</h3>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0.2rem 0 0' }}>Simulate future reach & follower trajectory based on weekly posting frequency and target profile base ({displayAccountLabel}).</p>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'var(--card-muted-bg)', padding: '0.5rem 1rem', borderRadius: '0.75rem', border: '1px solid var(--border-color)' }}>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Target Posts / Week:</span>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--brand-400)' }}>{forecastPostsPerWeek}</span>
-                  <input
-                    type="range"
-                    min={1}
-                    max={14}
-                    value={forecastPostsPerWeek}
-                    onChange={(e) => setForecastPostsPerWeek(parseInt(e.target.value))}
-                    style={{ accentColor: 'var(--brand-500)', cursor: 'pointer', width: '6rem' }}
-                  />
-                </div>
-              </div>
-
-              {/* Simulation Result Cards derived from connected baseline */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(14rem, 1fr))', gap: '1rem' }}>
-                <div style={{ background: 'var(--card-muted-bg)', border: '1px solid var(--border-color)', borderRadius: '0.75rem', padding: '1rem' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>30-Day Forecast</span>
-                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--emerald-400)', margin: '0.2rem 0' }}>
-                    +{displayFollowers > 0 ? Math.round(displayFollowers * 0.05 * forecastPostsPerWeek).toLocaleString() : (forecastPostsPerWeek * 150).toLocaleString()} Followers
-                  </div>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                    Projected Reach: {displayImpressions > 0 ? Math.round((displayImpressions * 0.15 * forecastPostsPerWeek) / 1000).toLocaleString() + 'K views' : (forecastPostsPerWeek * 1.5).toFixed(1) + 'K views'}
-                  </span>
-                </div>
-                <div style={{ background: 'var(--card-muted-bg)', border: '1px solid var(--border-color)', borderRadius: '0.75rem', padding: '1rem' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>60-Day Forecast</span>
-                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--brand-400)', margin: '0.2rem 0' }}>
-                    +{displayFollowers > 0 ? Math.round(displayFollowers * 0.12 * forecastPostsPerWeek).toLocaleString() : (forecastPostsPerWeek * 380).toLocaleString()} Followers
-                  </div>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                    Projected Reach: {displayImpressions > 0 ? Math.round((displayImpressions * 0.35 * forecastPostsPerWeek) / 1000).toLocaleString() + 'K views' : (forecastPostsPerWeek * 3.8).toFixed(1) + 'K views'}
-                  </span>
-                </div>
-                <div style={{ background: 'var(--card-muted-bg)', border: '1px solid var(--border-color)', borderRadius: '0.75rem', padding: '1rem' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>90-Day Forecast</span>
-                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--indigo-400)', margin: '0.2rem 0' }}>
-                    +{displayFollowers > 0 ? Math.round(displayFollowers * 0.22 * forecastPostsPerWeek).toLocaleString() : (forecastPostsPerWeek * 720).toLocaleString()} Followers
-                  </div>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                    Projected Reach: {displayImpressions > 0 ? Math.round((displayImpressions * 0.65 * forecastPostsPerWeek) / 1000).toLocaleString() + 'K views' : (forecastPostsPerWeek * 7.5).toFixed(1) + 'K views'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* (iii) Hashtag Analysis & Trend Detection Table */}
-            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>🏷️ Hashtag Performance & Viral Trend Analysis</h3>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0.2rem 0 0' }}>Reach multipliers, engagement velocity and competition index for top hashtags ({displayAccountLabel}).</p>
-                </div>
-                <span style={{ fontSize: '0.7rem', background: 'rgba(16,185,129,0.1)', color: 'var(--emerald-400)', border: '1px solid rgba(16,185,129,0.2)', padding: '0.2rem 0.5rem', borderRadius: '0.375rem', fontWeight: 700 }}>
-                  LIVE TREND DETECTION
-                </span>
-              </div>
-
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left' }}>Hashtag</th>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Avg Reach</th>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Engagement Multiplier</th>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>Viral Momentum</th>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>Competition Level</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {getProfileHashtags().map((row, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                        <td style={{ padding: '0.875rem 1rem', fontWeight: 700, color: 'var(--brand-400)' }}>{row.tag}</td>
-                        <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontWeight: 600 }}>{row.reach}</td>
-                        <td style={{ padding: '0.875rem 1rem', textAlign: 'right', color: 'var(--emerald-400)', fontWeight: 700 }}>{row.mult}</td>
-                        <td style={{ padding: '0.875rem 1rem', textAlign: 'center', fontWeight: 800 }}>{row.score}</td>
-                        <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
-                          <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem', borderRadius: '0.25rem', fontWeight: 700, border: `1px solid ${row.compColor}`, color: row.compColor }}>
-                            {row.comp}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Interactive SVG Growth & Reach Charts */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(20rem, 1fr))', gap: '1.5rem' }}>
-              
-              {/* Chart 1: Consolidated Reach */}
-              <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div>
-                  <h4 style={{ fontSize: '0.9rem', fontWeight: 800, margin: 0 }}>Consolidated Reach Growth</h4>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--emerald-400)', fontWeight: 600 }}>
-                    📈 {displayFollowers > 0 ? `+${(displayFollowers * 0.082).toFixed(0)} net growth past 30 days` : '0 growth (connect channels to track)'}
-                  </span>
-                </div>
-                
-                {/* SVG Line Chart */}
-                <div style={{ width: '100%', height: '10rem', background: '#0b0f19', borderRadius: '0.5rem', overflow: 'hidden', padding: '0.5rem' }}>
-                  <svg viewBox="0 0 500 200" style={{ width: '100%', height: '100%' }}>
-                    <defs>
-                      <linearGradient id="reachGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--brand-500)" stopOpacity="0.4" />
-                        <stop offset="100%" stopColor="var(--brand-500)" stopOpacity="0.0" />
-                      </linearGradient>
-                    </defs>
-                    <line x1="30" y1="40" x2="480" y2="40" stroke="#1e293b" strokeWidth="1" strokeDasharray="4" />
-                    <line x1="30" y1="90" x2="480" y2="90" stroke="#1e293b" strokeWidth="1" strokeDasharray="4" />
-                    <line x1="30" y1="140" x2="480" y2="140" stroke="#1e293b" strokeWidth="1" strokeDasharray="4" />
-                    <text x="30" y="195" fill="#64748b" fontSize="12" textAnchor="middle">Jul 1</text>
-                    <text x="142" y="195" fill="#64748b" fontSize="12" textAnchor="middle">Jul 5</text>
-                    <text x="255" y="195" fill="#64748b" fontSize="12" textAnchor="middle">Jul 10</text>
-                    <text x="367" y="195" fill="#64748b" fontSize="12" textAnchor="middle">Jul 15</text>
-                    <text x="480" y="195" fill="#64748b" fontSize="12" textAnchor="middle">Jul 19</text>
-                    <path
-                      d="M 30,170 C 100,165 150,130 255,100 C 350,75 420,50 480,30"
-                      fill="none"
-                      stroke="var(--brand-500)"
-                      strokeWidth="3.5"
-                      strokeLinecap="round"
-                    />
-                    <path
-                      d="M 30,170 C 100,165 150,130 255,100 C 350,75 420,50 480,30 L 480,180 L 30,180 Z"
-                      fill="url(#reachGrad)"
-                    />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Chart 2: Platform Impressions comparison */}
-              <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div>
-                  <h4 style={{ fontSize: '0.9rem', fontWeight: 800, margin: 0 }}>Platform Impressions Share</h4>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Real breakdown of content views per connected platform</span>
-                </div>
-                
-                {/* SVG Bar Chart with Connected Platform Indicators */}
-                <div style={{ width: '100%', height: '10rem', background: '#0b0f19', borderRadius: '0.5rem', overflow: 'hidden', padding: '0.5rem' }}>
-                  <svg viewBox="0 0 500 200" style={{ width: '100%', height: '100%' }}>
-                    <line x1="30" y1="50" x2="480" y2="50" stroke="#1e293b" strokeWidth="1" />
-                    <line x1="30" y1="100" x2="480" y2="100" stroke="#1e293b" strokeWidth="1" />
-                    <line x1="30" y1="150" x2="480" y2="150" stroke="#1e293b" strokeWidth="1" />
-                    
-                    {/* YouTube bar */}
-                    <rect x="70" y={connectedChannelId ? "40" : "165"} width="40" height={connectedChannelId ? "135" : "10"} fill="#ef4444" rx="4" opacity={connectedChannelId ? 1 : 0.2} />
-                    <text x="90" y="195" fill={connectedChannelId ? "#ef4444" : "#64748b"} fontSize="12" fontWeight={connectedChannelId ? "bold" : "normal"} textAnchor="middle">YouTube</text>
-                    
-                    {/* LinkedIn bar */}
-                    <rect x="170" y={connectedLinkedinId ? "90" : "165"} width="40" height={connectedLinkedinId ? "85" : "10"} fill="#0077b5" rx="4" opacity={connectedLinkedinId ? 1 : 0.2} />
-                    <text x="190" y="195" fill={connectedLinkedinId ? "#0077b5" : "#64748b"} fontSize="12" fontWeight={connectedLinkedinId ? "bold" : "normal"} textAnchor="middle">LinkedIn</text>
-                    
-                    {/* Instagram bar */}
-                    <rect x="270" y={connectedInstagramId ? "60" : "165"} width="40" height={connectedInstagramId ? "115" : "10"} fill="#dc2743" rx="4" opacity={connectedInstagramId ? 1 : 0.2} />
-                    <text x="290" y="195" fill={connectedInstagramId ? "#dc2743" : "#64748b"} fontSize="12" fontWeight={connectedInstagramId ? "bold" : "normal"} textAnchor="middle">Instagram</text>
-                    
-                    {/* Facebook bar */}
-                    <rect x="370" y={connectedFacebookId ? "110" : "165"} width="40" height={connectedFacebookId ? "65" : "10"} fill="#1877f2" rx="4" opacity={connectedFacebookId ? 1 : 0.2} />
-                    <text x="390" y="195" fill={connectedFacebookId ? "#1877f2" : "#64748b"} fontSize="12" fontWeight={connectedFacebookId ? "bold" : "normal"} textAnchor="middle">Facebook</text>
-                  </svg>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Reports Generator & CSV Exporter */}
-            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>📄 Generate Custom Trend & Audit CSV Report</h3>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0.2rem 0 0' }}>Export snapshot spreadsheets for brand deals, executive reviews, and channel audits based on your real account stats.</p>
-              </div>
-
-              <form onSubmit={handleGenerateReport} style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flexGrow: 1, minWidth: '15rem' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Report Description Title</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="E.g. Q3 Executive Creator Summary"
-                    value={reportTitle}
-                    onChange={(e) => setReportTitle(e.target.value)}
-                    style={{ padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', background: 'var(--card-muted-bg)', color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit', fontSize: '0.85rem' }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '12rem' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Included Channels</label>
-                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    {['youtube', 'linkedin', 'instagram', 'facebook', 'twitter'].map(pf => (
-                      <label key={pf} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem', cursor: 'pointer', textTransform: 'capitalize' }}>
-                        <input
-                          type="checkbox"
-                          checked={reportPlatforms.includes(pf)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setReportPlatforms(prev => [...prev, pf]);
-                            } else {
-                              setReportPlatforms(prev => prev.filter(x => x !== pf));
-                            }
-                          }}
-                          style={{ accentColor: 'var(--brand-500)' }}
-                        />
-                        {pf}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={reportGenerating}
-                  style={{
-                    padding: '0.5rem 1.25rem',
-                    background: 'linear-gradient(to right, var(--brand-600), var(--indigo-600))',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '0.5rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
-                    boxShadow: '0 4px 12px rgba(139,92,246,0.15)'
-                  }}
-                >
-                  {reportGenerating ? 'Generating...' : 'Generate Trend Report'}
-                </button>
-              </form>
-
-              {/* Reports Log History Table */}
-              {reports.length > 0 && (
-                <div style={{ overflowX: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                        <th style={{ padding: '0.75rem 1rem', textAlign: 'left' }}>Report Details</th>
-                        <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>Channels Included</th>
-                        <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>Date Generated</th>
-                        <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {reports.map(rep => {
-                        const csvRows = [["Platform", "Metric", "Value"]];
-                        Object.keys(rep.data).forEach(pf => {
-                          Object.keys(rep.data[pf]).forEach(met => {
-                            csvRows.push([pf, met, rep.data[pf][met]]);
-                          });
-                        });
-                        const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n");
-                        const encodedUri = encodeURI(csvContent);
-
-                        return (
-                          <tr key={rep.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                            <td style={{ padding: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{rep.title}</td>
-                            <td style={{ padding: '1rem', textAlign: 'center' }}>
-                              <div style={{ display: 'flex', gap: '0.35rem', justifyContent: 'center' }}>
-                                {rep.platforms.map(p => (
-                                  <span key={p} style={{ fontSize: '0.6rem', padding: '0.1rem 0.35rem', borderRadius: '0.25rem', fontWeight: 800, textTransform: 'uppercase', background: p === 'youtube' ? 'rgba(239,68,68,0.1)' : p === 'linkedin' ? 'rgba(0,119,181,0.1)' : p === 'instagram' ? 'rgba(220,39,67,0.1)' : 'rgba(24,119,242,0.1)', color: p === 'youtube' ? '#ef4444' : p === 'linkedin' ? '#0077b5' : p === 'instagram' ? '#dc2743' : '#1877f2' }}>
-                                    {p}
-                                  </span>
-                                ))}
-                              </div>
-                            </td>
-                            <td style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>{new Date(rep.created_at).toLocaleDateString()}</td>
-                            <td style={{ padding: '1rem', textAlign: 'center' }}>
-                              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                                <a href={encodedUri} download={`${rep.title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_report.csv`} style={{ padding: '0.3rem 0.75rem', borderRadius: '0.375rem', textDecoration: 'none', background: 'var(--emerald-600)', color: '#fff', fontWeight: 600, fontSize: '0.75rem', display: 'inline-block' }}>Download CSV</a>
-                                <button onClick={() => window.print()} style={{ padding: '0.3rem 0.75rem', borderRadius: '0.375rem', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer' }}>Print Report</button>
-                                <button onClick={() => handleDeleteReport(rep.id)} style={{ padding: '0.3rem 0.75rem', borderRadius: '0.375rem', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--rose-400)', fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer' }}>Delete</button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-          </div>
+          <GrowthAnalytics
+            user={user}
+            connectedYtData={connectedYtData}
+            connectedLinkedinId={connectedLinkedinId}
+            connectedLinkedinTitle={connectedLinkedinTitle}
+            connectedLinkedinConnections={connectedLinkedinConnections}
+            connectedLinkedinImpressions={connectedLinkedinImpressions}
+            connectedInstagramId={connectedInstagramId}
+            connectedInstagramTitle={connectedInstagramTitle}
+            connectedInstagramFollowers={connectedInstagramFollowers}
+            connectedInstagramEngagement={connectedInstagramEngagement}
+            connectedFacebookId={connectedFacebookId}
+            connectedFacebookTitle={connectedFacebookTitle}
+            connectedFacebookFollowers={connectedFacebookFollowers}
+            connectedFacebookReach={connectedFacebookReach}
+            connectedTwitterUsername={connectedTwitterUsername}
+            connectedTwitterDisplayName={connectedTwitterDisplayName}
+            connectedTwitterFollowers={connectedTwitterFollowers}
+            connectedTwitterEngagement={connectedTwitterEngagement}
+          />
         )}
 
         {/* ==================== AUDIENCE ANALYTICS MODULE ==================== */}
         {activeTab === 'audience' && (
-          <div style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '2rem', animation: 'fadeIn 0.4s ease', textAlign: 'left' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Audience Analytics</h2>
-              </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
-                Real-time tracking of follower growth, demographics, geolocation, device usage, and peak active hours calculated from your connected profiles.
-              </p>
-            </div>
-
-            {/* Connected Accounts Warning Banner if no accounts linked */}
-            {connectedPlatformsList.length === 0 && (
-              <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '0.75rem', padding: '1rem 1.25rem', color: 'var(--amber-400)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', fontSize: '0.85rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  <span style={{ fontSize: '1.2rem' }}>⚠️</span>
-                  <span><strong>No Social Accounts Connected:</strong> Connect your YouTube, Instagram, Facebook, or LinkedIn account to calculate live real-time audience analytics.</span>
-                </div>
-                <button onClick={() => setCurrentPath('/youtube')} style={{ background: 'var(--amber-500)', color: '#000', border: 'none', borderRadius: '0.4rem', padding: '0.35rem 0.75rem', fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
-                  Connect Channel
-                </button>
-              </div>
-            )}
-
-            {/* Account Filter & Connected Profiles Selector Bar */}
-            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Linked Accounts Analysis Filter</span>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '0.1rem 0 0', color: 'var(--text-primary)' }}>
-                    Showing Data For: <span style={{ color: 'var(--emerald-400)' }}>{displayAccountLabel}</span>
-                  </h3>
-                </div>
-
-                {/* Platform Filter Buttons */}
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <button
-                    onClick={() => setSelectedAnalyticsAccount('all')}
-                    style={{
-                      padding: '0.4rem 0.85rem',
-                      borderRadius: '0.5rem',
-                      fontWeight: 700,
-                      fontSize: '0.75rem',
-                      cursor: 'pointer',
-                      border: '1px solid var(--border-color)',
-                      background: selectedAnalyticsAccount === 'all' ? 'var(--emerald-600)' : 'var(--card-muted-bg)',
-                      color: selectedAnalyticsAccount === 'all' ? '#fff' : 'var(--text-secondary)'
-                    }}
-                  >
-                    🌐 All Linked Accounts ({connectedPlatformsList.length})
-                  </button>
-
-                  {connectedChannelId && (
-                    <button
-                      onClick={() => setSelectedAnalyticsAccount('youtube')}
-                      style={{
-                        padding: '0.4rem 0.85rem',
-                        borderRadius: '0.5rem',
-                        fontWeight: 700,
-                        fontSize: '0.75rem',
-                        cursor: 'pointer',
-                        border: '1px solid var(--border-color)',
-                        background: selectedAnalyticsAccount === 'youtube' ? '#ef4444' : 'var(--card-muted-bg)',
-                        color: selectedAnalyticsAccount === 'youtube' ? '#fff' : 'var(--text-secondary)'
-                      }}
-                    >
-                      🔴 {connectedChannelTitle || 'YouTube Channel'}
-                    </button>
-                  )}
-
-                  {connectedLinkedinId && (
-                    <button
-                      onClick={() => setSelectedAnalyticsAccount('linkedin')}
-                      style={{
-                        padding: '0.4rem 0.85rem',
-                        borderRadius: '0.5rem',
-                        fontWeight: 700,
-                        fontSize: '0.75rem',
-                        cursor: 'pointer',
-                        border: '1px solid var(--border-color)',
-                        background: selectedAnalyticsAccount === 'linkedin' ? '#0077b5' : 'var(--card-muted-bg)',
-                        color: selectedAnalyticsAccount === 'linkedin' ? '#fff' : 'var(--text-secondary)'
-                      }}
-                    >
-                      💼 {connectedLinkedinTitle || 'LinkedIn Profile'}
-                    </button>
-                  )}
-
-                  {connectedInstagramId && (
-                    <button
-                      onClick={() => setSelectedAnalyticsAccount('instagram')}
-                      style={{
-                        padding: '0.4rem 0.85rem',
-                        borderRadius: '0.5rem',
-                        fontWeight: 700,
-                        fontSize: '0.75rem',
-                        cursor: 'pointer',
-                        border: '1px solid var(--border-color)',
-                        background: selectedAnalyticsAccount === 'instagram' ? '#dc2743' : 'var(--card-muted-bg)',
-                        color: selectedAnalyticsAccount === 'instagram' ? '#fff' : 'var(--text-secondary)'
-                      }}
-                    >
-                      📸 {connectedInstagramTitle || 'Instagram Profile'}
-                    </button>
-                  )}
-
-                  {connectedFacebookId && (
-                    <button
-                      onClick={() => setSelectedAnalyticsAccount('facebook')}
-                      style={{
-                        padding: '0.4rem 0.85rem',
-                        borderRadius: '0.5rem',
-                        fontWeight: 700,
-                        fontSize: '0.75rem',
-                        cursor: 'pointer',
-                        border: '1px solid var(--border-color)',
-                        background: selectedAnalyticsAccount === 'facebook' ? '#1877f2' : 'var(--card-muted-bg)',
-                        color: selectedAnalyticsAccount === 'facebook' ? '#fff' : 'var(--text-secondary)'
-                      }}
-                    >
-                      📘 {connectedFacebookTitle || 'Facebook Page'}
-                    </button>
-                  )}
-
-                  {connectedTwitterUsername && (
-                    <button
-                      onClick={() => setSelectedAnalyticsAccount('twitter')}
-                      style={{
-                        padding: '0.4rem 0.85rem',
-                        borderRadius: '0.5rem',
-                        fontWeight: 700,
-                        fontSize: '0.75rem',
-                        cursor: 'pointer',
-                        border: '1px solid var(--border-color)',
-                        background: selectedAnalyticsAccount === 'twitter' ? '#1da1f2' : 'var(--card-muted-bg)',
-                        color: selectedAnalyticsAccount === 'twitter' ? '#fff' : 'var(--text-secondary)'
-                      }}
-                    >
-                      🐦 {connectedTwitterDisplayName || 'Twitter Profile'}
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Individual Connected Account Metrics Cards Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(15rem, 1fr))', gap: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                {/* YouTube Card */}
-                <div style={{ background: 'var(--card-muted-bg)', border: `1px solid ${selectedAnalyticsAccount === 'youtube' ? '#ef4444' : 'var(--border-color)'}`, borderRadius: '0.75rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 800, fontSize: '0.85rem', color: '#ef4444' }}>
-                      <span>🔴</span> YouTube Channel
-                    </div>
-                    <span style={{ fontSize: '0.65rem', background: connectedChannelId ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: connectedChannelId ? 'var(--emerald-400)' : 'var(--rose-400)', border: `1px solid ${connectedChannelId ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`, padding: '0.1rem 0.4rem', borderRadius: '0.25rem', fontWeight: 700 }}>
-                      {connectedChannelId ? '🟢 LINKED' : '🔴 NOT LINKED'}
-                    </span>
-                  </div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                    {connectedChannelTitle || (connectedChannelId ? connectedChannelId : 'No channel linked')}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    <span>Subscribers: <strong style={{ color: 'var(--text-primary)' }}>{realYtSubs.toLocaleString()}</strong></span>
-                    <span>Views: <strong style={{ color: 'var(--text-primary)' }}>{(realYtViews > 1000000 ? (realYtViews/1000000).toFixed(1) + 'M' : (realYtViews/1000).toFixed(1) + 'K')}</strong></span>
-                  </div>
-                </div>
-
-                {/* LinkedIn Card */}
-                <div style={{ background: 'var(--card-muted-bg)', border: `1px solid ${selectedAnalyticsAccount === 'linkedin' ? '#0077b5' : 'var(--border-color)'}`, borderRadius: '0.75rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 800, fontSize: '0.85rem', color: '#0077b5' }}>
-                      <span>💼</span> LinkedIn Profile
-                    </div>
-                    <span style={{ fontSize: '0.65rem', background: connectedLinkedinId ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: connectedLinkedinId ? 'var(--emerald-400)' : 'var(--rose-400)', border: `1px solid ${connectedLinkedinId ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`, padding: '0.1rem 0.4rem', borderRadius: '0.25rem', fontWeight: 700 }}>
-                      {connectedLinkedinId ? '🟢 LINKED' : '🔴 NOT LINKED'}
-                    </span>
-                  </div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                    {connectedLinkedinTitle || (connectedLinkedinId ? connectedLinkedinId : 'No profile linked')}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    <span>Connections: <strong style={{ color: 'var(--text-primary)' }}>{realLiConnections.toLocaleString()}</strong></span>
-                    <span>Impressions: <strong style={{ color: 'var(--text-primary)' }}>{realLiImpressions.toLocaleString()}</strong></span>
-                  </div>
-                </div>
-
-                {/* Instagram Card */}
-                <div style={{ background: 'var(--card-muted-bg)', border: `1px solid ${selectedAnalyticsAccount === 'instagram' ? '#dc2743' : 'var(--border-color)'}`, borderRadius: '0.75rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 800, fontSize: '0.85rem', color: '#dc2743' }}>
-                      <span>📸</span> Instagram Profile
-                    </div>
-                    <span style={{ fontSize: '0.65rem', background: connectedInstagramId ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: connectedInstagramId ? 'var(--emerald-400)' : 'var(--rose-400)', border: `1px solid ${connectedInstagramId ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`, padding: '0.1rem 0.4rem', borderRadius: '0.25rem', fontWeight: 700 }}>
-                      {connectedInstagramId ? '🟢 LINKED' : '🔴 NOT LINKED'}
-                    </span>
-                  </div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                    {connectedInstagramTitle || (connectedInstagramId ? connectedInstagramId : 'No profile linked')}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    <span>Followers: <strong style={{ color: 'var(--text-primary)' }}>{realIgFollowers.toLocaleString()}</strong></span>
-                    <span>Posts: <strong style={{ color: 'var(--text-primary)' }}>{realIgPosts}</strong></span>
-                  </div>
-                </div>
-
-                {/* Facebook Card */}
-                <div style={{ background: 'var(--card-muted-bg)', border: `1px solid ${selectedAnalyticsAccount === 'facebook' ? '#1877f2' : 'var(--border-color)'}`, borderRadius: '0.75rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 800, fontSize: '0.85rem', color: '#1877f2' }}>
-                      <span>📘</span> Facebook Page
-                    </div>
-                    <span style={{ fontSize: '0.65rem', background: connectedFacebookId ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: connectedFacebookId ? 'var(--emerald-400)' : 'var(--rose-400)', border: `1px solid ${connectedFacebookId ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`, padding: '0.1rem 0.4rem', borderRadius: '0.25rem', fontWeight: 700 }}>
-                      {connectedFacebookId ? '🟢 LINKED' : '🔴 NOT LINKED'}
-                    </span>
-                  </div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                    {connectedFacebookTitle || (connectedFacebookId ? connectedFacebookId : 'No page linked')}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    <span>Followers: <strong style={{ color: 'var(--text-primary)' }}>{realFbFollowers.toLocaleString()}</strong></span>
-                    <span>Reach: <strong style={{ color: 'var(--text-primary)' }}>{realFbReach.toLocaleString()}</strong></span>
-                  </div>
-                </div>
-
-                {/* Twitter Card */}
-                <div style={{ background: 'var(--card-muted-bg)', border: `1px solid ${selectedAnalyticsAccount === 'twitter' ? '#1da1f2' : 'var(--border-color)'}`, borderRadius: '0.75rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 800, fontSize: '0.85rem', color: '#1da1f2' }}>
-                      <span>🐦</span> Twitter Profile
-                    </div>
-                    <span style={{ fontSize: '0.65rem', background: connectedTwitterUsername ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: connectedTwitterUsername ? 'var(--emerald-400)' : 'var(--rose-400)', border: `1px solid ${connectedTwitterUsername ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`, padding: '0.1rem 0.4rem', borderRadius: '0.25rem', fontWeight: 700 }}>
-                      {connectedTwitterUsername ? '🟢 LINKED' : '🔴 NOT LINKED'}
-                    </span>
-                  </div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                    {connectedTwitterDisplayName || (connectedTwitterUsername ? connectedTwitterUsername : 'No profile linked')}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    <span>Followers: <strong style={{ color: 'var(--text-primary)' }}>{connectedTwitterFollowers.toLocaleString()}</strong></span>
-                    <span>Tweets: <strong style={{ color: 'var(--text-primary)' }}>{connectedTwitterTweets.toLocaleString()}</strong></span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 6 Key Analytics Feature Cards for Module 3 (Dynamic connected stats) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(13rem, 1fr))', gap: '1.25rem' }}>
-              {[
-                { 
-                  label: 'Follower Growth', 
-                  value: displayFollowers > 0 ? `${displayFollowers.toLocaleString()} Total` : '0 Connected', 
-                  desc: displayAccountLabel, 
-                  color: 'var(--emerald-400)' 
-                },
-                { 
-                  label: 'Demographics', 
-                  value: displayFollowers > 0 ? '18 - 24 yrs' : 'N/A', 
-                  desc: displayFollowers > 0 ? `Primary Age Bracket (${getProfileDemographics()[0]?.percent || 0}%)` : 'Connect accounts to view', 
-                  color: 'var(--brand-400)' 
-                },
-                { 
-                  label: 'Engagement Insights', 
-                  value: `${(realIgEngagement || realFbEngagement || (displayFollowers > 0 ? 4.8 : 0)).toFixed(2)}% Avg`, 
-                  desc: displayFollowers > 0 ? 'Live engagement rate' : 'No activity logged', 
-                  color: 'var(--indigo-400)' 
-                },
-                { 
-                  label: 'Reach Analysis', 
-                  value: displayImpressions > 0 ? `${(Math.round(displayImpressions * 0.35) > 1000000 ? (displayImpressions * 0.35 / 1000000).toFixed(1) + 'M' : Math.round(displayImpressions * 0.35 / 1000) + 'K')} Unique` : '0 Unique', 
-                  desc: 'Unique viewer expansion', 
-                  color: 'var(--blue-400)' 
-                },
-                { 
-                  label: 'Impressions Tracking', 
-                  value: displayImpressions > 0 ? `${(displayImpressions > 1000000 ? (displayImpressions / 1000000).toFixed(1) + 'M' : (displayImpressions / 1000).toFixed(1) + 'K')} Total` : '0 Views', 
-                  desc: displayImpressions > 0 ? 'Live impression count' : 'Connect channels for data', 
-                  color: 'var(--orange-400)' 
-                },
-                { 
-                  label: 'Behavior Monitoring', 
-                  value: displayFollowers > 0 ? '62% Returning' : '0% Returning', 
-                  desc: displayFollowers > 0 ? '6m 45s avg watch duration' : 'No watch data', 
-                  color: 'var(--rose-400)' 
-                },
-              ].map((stat, idx) => (
-                <div key={idx} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>{stat.label}</span>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0.2rem 0' }}>{stat.value}</div>
-                  <span style={{ fontSize: '0.7rem', color: stat.color, fontWeight: 600 }}>{stat.desc}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Audience Data Breakdown: Age & Gender Distribution */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(18rem, 1fr))', gap: '1.5rem' }}>
-              
-              {/* Age Distribution Breakdown */}
-              <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <div>
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>🎂 Age Distribution</h4>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Audience age brackets breakdown ({displayAccountLabel})</span>
-                </div>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                  {getProfileDemographics().map(row => (
-                    <div key={row.label} style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700 }}>
-                        <span>{row.label}</span>
-                        <span style={{ color: row.color }}>{row.percent}%</span>
-                      </div>
-                      <div style={{ width: '100%', height: '0.45rem', background: 'var(--card-muted-bg)', borderRadius: '1rem', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${displayFollowers > 0 ? row.percent : 0}%`, background: row.color, borderRadius: '1rem', transition: 'width 0.4s ease' }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Gender Distribution Breakdown (Calculated dynamically relative to selected profile) */}
-              <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <div>
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>👥 Gender Distribution</h4>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Community gender identity split for {displayAccountLabel}</span>
-                </div>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', justifyContent: 'center', height: '100%' }}>
-                  {getProfileGender().map(g => (
-                    <div key={g.label} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{g.label}</span>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: g.color }}>{displayFollowers > 0 ? g.percent + '%' : '0%'} ({g.count})</span>
-                      </div>
-                      <div style={{ width: '100%', height: '0.5rem', background: 'var(--card-muted-bg)', borderRadius: '1rem', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${displayFollowers > 0 ? g.percent : 0}%`, background: g.color, borderRadius: '1rem', transition: 'width 0.4s ease' }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-            </div>
-
-            {/* Geographic Location & Device Usage */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(18rem, 1fr))', gap: '1.5rem' }}>
-              
-              {/* Geographic Location (Countries & Top Cities) */}
-              <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <div>
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>🌍 Geographic Location</h4>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Top countries and metropolitan reach ({displayAccountLabel})</span>
-                </div>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {getProfileGeo().map(row => (
-                    <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                      <span style={{ fontSize: '1.4rem', width: '1.8rem', textAlign: 'center' }}>{row.flag}</span>
-                      <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700 }}>
-                          <span>{row.label} <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>({row.cities})</span></span>
-                          <span style={{ color: 'var(--text-muted)' }}>{displayFollowers > 0 ? row.reach : '0 reach'} ({displayFollowers > 0 ? row.percent : 0}%)</span>
-                        </div>
-                        <div style={{ width: '100%', height: '0.35rem', background: 'var(--card-muted-bg)', borderRadius: '1rem', overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${displayFollowers > 0 ? row.percent : 0}%`, background: row.color, borderRadius: '1rem', transition: 'width 0.4s ease' }} />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Device Usage Breakdown */}
-              <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <div>
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>📱 Device Usage Breakdown</h4>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Platform hardware distribution ({displayAccountLabel})</span>
-                </div>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
-                  {getProfileDevices().map(dev => (
-                    <div key={dev.name} style={{ background: 'var(--card-muted-bg)', border: '1px solid var(--border-color)', borderRadius: '0.75rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '1.3rem' }}>{dev.icon}</span>
-                        <span style={{ fontSize: '1.1rem', fontWeight: 800, color: dev.color }}>{dev.percent}%</span>
-                      </div>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>{dev.name}</span>
-                      <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{dev.detail}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-            </div>
-
-            {/* Active Hours Peak Heatmap & Behavior Monitoring */}
-            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '1rem', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div>
-                <h4 style={{ fontSize: '0.95rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>🕒 Active Hours & Peak Community Engagement Matrix</h4>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Darker purple squares indicate optimal times when your audience is most active and engaged online.</span>
-              </div>
-              
-              <div style={{ overflowX: 'auto', paddingTop: '0.5rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: '32rem' }}>
-                  {/* Hours Header label */}
-                  <div style={{ display: 'flex', gap: '0.35rem', paddingLeft: '3rem' }}>
-                    {['12am-4am', '4am-8am', '8am-12pm', '12pm-4pm', '4pm-8pm', '8pm-12am'].map(hour => (
-                      <div key={hour} style={{ flex: 1, textAlign: 'center', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)' }}>{hour}</div>
-                    ))}
-                  </div>
-
-                  {/* Days Rows */}
-                  {[
-                    { day: 'Mon', weights: [1, 2, 4, 6, 9, 7] },
-                    { day: 'Tue', weights: [1, 3, 5, 7, 9, 8] },
-                    { day: 'Wed', weights: [2, 2, 5, 6, 8, 7] },
-                    { day: 'Thu', weights: [1, 3, 4, 7, 9, 8] },
-                    { day: 'Fri', weights: [2, 3, 6, 8, 9, 9] },
-                    { day: 'Sat', weights: [3, 4, 8, 9, 9, 8] },
-                    { day: 'Sun', weights: [4, 5, 9, 9, 9, 7] }
-                  ].map(row => (
-                    <div key={row.day} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                      <span style={{ width: '2.5rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>{row.day}</span>
-                      {row.weights.map((wt, idx) => (
-                        <div
-                          key={idx}
-                          title={`Peak Active Score: ${wt}/10 (${wt >= 8 ? 'Optimal Post Window' : 'Normal'})`}
-                          style={{
-                            flex: 1,
-                            height: '2rem',
-                            borderRadius: '0.25rem',
-                            background: 'var(--brand-500)',
-                            opacity: displayFollowers > 0 ? (wt / 10) : 0.1,
-                            border: '1px solid rgba(255,255,255,0.02)',
-                            transition: 'transform 0.1s ease',
-                            cursor: 'pointer'
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                        />
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-          </div>
+          <AudienceAnalytics
+            user={user}
+            connectedYtData={connectedYtData}
+            connectedLinkedinId={connectedLinkedinId}
+            connectedLinkedinTitle={connectedLinkedinTitle}
+            connectedLinkedinConnections={connectedLinkedinConnections}
+            connectedLinkedinImpressions={connectedLinkedinImpressions}
+            connectedInstagramId={connectedInstagramId}
+            connectedInstagramTitle={connectedInstagramTitle}
+            connectedInstagramFollowers={connectedInstagramFollowers}
+            connectedInstagramEngagement={connectedInstagramEngagement}
+            connectedFacebookId={connectedFacebookId}
+            connectedFacebookTitle={connectedFacebookTitle}
+            connectedFacebookFollowers={connectedFacebookFollowers}
+            connectedFacebookReach={connectedFacebookReach}
+            connectedFacebookEngagement={connectedFacebookEngagement}
+            connectedTwitterUsername={connectedTwitterUsername}
+            connectedTwitterDisplayName={connectedTwitterDisplayName}
+            connectedTwitterFollowers={connectedTwitterFollowers}
+            connectedTwitterEngagement={connectedTwitterEngagement}
+          />
         )}
 
         {/* ==================== REVENUE ANALYTICS MODULE ==================== */}
         {activeTab === 'revenue' && (
-          <RevenueAnalytics user={user} />
+          <RevenueAnalytics
+            user={user}
+            connectedYtData={connectedYtData}
+            connectedInstagramFollowers={connectedInstagramFollowers}
+            connectedFacebookFollowers={connectedFacebookFollowers}
+            connectedTwitterFollowers={connectedTwitterFollowers}
+          />
         )}
 
       </div>

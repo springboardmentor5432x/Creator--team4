@@ -16,10 +16,17 @@ async function request(path, options = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers,
-    ...options,
-  });
+  let res;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      headers,
+      ...options,
+    });
+  } catch (fetchErr) {
+    // Handle local fetch network errors when server is unreachable
+    console.warn(`[API NETWORK ERROR] ${path}`, fetchErr);
+    throw new Error("Cannot connect to server. Please ensure backend is running at http://127.0.0.1:8000.");
+  }
 
   const text = await res.text();
   let data = {};
@@ -27,6 +34,9 @@ async function request(path, options = {}) {
     data = text ? JSON.parse(text) : {};
   } catch (e) {
     if (!res.ok) {
+      if (res.status === 502 || res.status === 503) {
+        throw new Error("Backend server is starting up or offline (HTTP 502 Bad Gateway). Please run backend server at port 8000.");
+      }
       throw new Error(`Server error (${res.status}): ${text.slice(0, 100)}`);
     }
   }
@@ -35,6 +45,9 @@ async function request(path, options = {}) {
     if (res.status === 401) {
       localStorage.removeItem('creatoriq_user');
       localStorage.removeItem('creatoriq_token');
+    }
+    if (res.status === 502 || res.status === 503) {
+      throw new Error("Backend server is starting up or offline (HTTP 502 Bad Gateway). Please run: uvicorn main:app --reload");
     }
     throw new Error(data.error || data.detail || `Request failed with status ${res.status}`);
   }
