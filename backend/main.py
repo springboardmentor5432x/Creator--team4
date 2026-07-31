@@ -1,5 +1,5 @@
 import os
-import requests
+import requests 
 from datetime import datetime, timedelta
 from typing import Optional, List
 
@@ -196,6 +196,10 @@ class GoogleLoginSchema(BaseModel):
 class UpdateRoleSchema(BaseModel):
     userId: int
     role: str
+
+class ConnectYoutubeSchema(BaseModel):
+    channelId: str
+    channelTitle: str
 
 class ConnectInstagramSchema(BaseModel):
     username: str

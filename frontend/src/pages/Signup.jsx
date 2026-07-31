@@ -113,7 +113,12 @@ export default function Signup({ onLoginSuccess }) {
     setSuccess('');
 
     try {
-      await api.register(form.name, form.email, form.password, form.role);
+      await api.register({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        role: form.role,
+      });
       setSuccess('Account created successfully! Redirecting to login...');
       setTimeout(() => {
         navigate('/login');
