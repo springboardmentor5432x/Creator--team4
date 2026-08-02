@@ -117,7 +117,7 @@ export default function Signup({ onLoginSuccess }) {
     try {
       const selectedRole = form.email.toLowerCase().includes('agency') ? 'Agency' : form.role;
       const res = await api.register(form.name, form.email, form.password, selectedRole);
-      setSuccess('Account created! Logging into Agency Workspace...');
+      setSuccess('Account created! Logging into Workspace...');
       onLoginSuccess(res.user, res.token);
       setTimeout(() => {
         const isAgency = res.user.role === 'Agency' || (res.user.email && res.user.email.toLowerCase().includes('agency'));
