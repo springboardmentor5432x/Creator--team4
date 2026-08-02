@@ -100,9 +100,13 @@ export const api = {
 
   // YouTube Integrations
   getYoutubeChannel: (query = '', channelId = '') => {
-    const q = encodeURIComponent(query);
-    const c = encodeURIComponent(channelId);
-    return request(`/youtube/channel/?q=${q}&channelId=${c}`, { method: 'GET' });
+    const params = new URLSearchParams();
+    if (query) params.append('q', query);
+    if (channelId) {
+      params.append('channel_id', channelId);
+      params.append('channelId', channelId);
+    }
+    return request(`/youtube/channel/?${params.toString()}`, { method: 'GET' });
   },
 
   connectYoutube: (channelIdOrObj, channelTitle) => {

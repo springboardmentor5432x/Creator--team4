@@ -1112,8 +1112,8 @@ def youtube_channel_analytics(request):
     if request.method != 'GET':
         return JsonResponse({'error': 'Only GET method is allowed'}, status=405)
 
-    q = request.GET.get('q', '').strip()
-    channel_id = request.GET.get('channel_id', '').strip()
+    q = (request.GET.get('q') or request.GET.get('query') or '').strip()
+    channel_id = (request.GET.get('channel_id') or request.GET.get('channelId') or '').strip()
 
     if not q and not channel_id:
         return JsonResponse({'error': 'Either "q" or "channel_id" parameter is required.'}, status=400)
