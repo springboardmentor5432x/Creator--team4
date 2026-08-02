@@ -239,4 +239,61 @@ export const api = {
     request(`/audience/insights/?platform=${platform}`, {
       method: 'GET',
     }),
+
+  // Agency Dashboard API
+  getAgencyOverview: () =>
+    request('/agency/overview/', {
+      method: 'GET',
+    }),
+
+  getAgencyCreators: () =>
+    request('/agency/creators/', {
+      method: 'GET',
+    }),
+
+  addAgencyCreator: (creatorData) =>
+    request('/agency/creators/', {
+      method: 'POST',
+      body: JSON.stringify(creatorData),
+    }),
+
+  removeAgencyCreator: (id) =>
+    request(`/agency/creators/?id=${id}`, {
+      method: 'DELETE',
+    }),
+
+  compareAgencyCreators: (ids = []) => {
+    const query = ids.length ? `?ids=${ids.join(',')}` : '';
+    return request(`/agency/compare/${query}`, {
+      method: 'GET',
+    });
+  },
+
+  getAgencyRevenue: () =>
+    request('/agency/revenue/', {
+      method: 'GET',
+    }),
+
+  getAgencyCampaigns: () =>
+    request('/agency/campaigns/', {
+      method: 'GET',
+    }),
+
+  createAgencyCampaign: (campaignData) =>
+    request('/agency/campaigns/', {
+      method: 'POST',
+      body: JSON.stringify(campaignData),
+    }),
+
+  getAgencySettings: () =>
+    request('/agency/settings/', {
+      method: 'GET',
+    }),
+
+  updateAgencySettings: (settingsData) =>
+    request('/agency/settings/', {
+      method: 'POST',
+      body: JSON.stringify(settingsData),
+    }),
 };
+

@@ -18,7 +18,13 @@ from accounts.views import (
     create_deal_view,
     delete_deal_view,
     get_audience_insights_view,
-    me_view
+    me_view,
+    get_agency_overview_view,
+    manage_agency_creators_view,
+    compare_agency_creators_view,
+    get_agency_revenue_view,
+    manage_agency_campaigns_view,
+    manage_agency_settings_view
 )
 
 def serve_frontend(request):
@@ -82,6 +88,14 @@ urlpatterns = [
     # Audience Insights
     path('api/audience/insights/', get_audience_insights_view, name='api_audience_insights'),
     
+    # Agency Dashboard
+    path('api/agency/overview/', get_agency_overview_view, name='api_agency_overview'),
+    path('api/agency/creators/', manage_agency_creators_view, name='api_agency_creators'),
+    path('api/agency/compare/', compare_agency_creators_view, name='api_agency_compare'),
+    path('api/agency/revenue/', get_agency_revenue_view, name='api_agency_revenue'),
+    path('api/agency/campaigns/', manage_agency_campaigns_view, name='api_agency_campaigns'),
+    path('api/agency/settings/', manage_agency_settings_view, name='api_agency_settings'),
+
     path('api/config/', get_config, name='api_config'),
     path('api/health', health_check, name='api_health'),
     path('api/me/', me_view, name='api_me'),

@@ -21,12 +21,13 @@ export default function Login({ onLoginSuccess }) {
       setSuccess('Google Login Successful!');
       onLoginSuccess(result.user, result.token);
       setTimeout(() => {
+        const isAgency = result.user.role === 'Agency' || (result.user.email && result.user.email.toLowerCase().includes('agency'));
         const dest = result.user.role === 'Administrator' ? '/admin'
                    : result.user.role === 'Marketing Team' ? '/reports'
-                   : result.user.role === 'Agency' ? '/audience'
+                   : isAgency ? '/agency'
                    : '/youtube';
         navigate(dest);
-      }, 1000);
+      }, 800);
     } catch (err) {
       setError(err.message || 'Google authentication failed');
     } finally {
@@ -87,12 +88,13 @@ export default function Login({ onLoginSuccess }) {
       setSuccess('Login Successful! Redirecting...');
       onLoginSuccess(result.user, result.token);
       setTimeout(() => {
+        const isAgency = result.user.role === 'Agency' || (result.user.email && result.user.email.toLowerCase().includes('agency'));
         const dest = result.user.role === 'Administrator' ? '/admin'
                    : result.user.role === 'Marketing Team' ? '/reports'
-                   : result.user.role === 'Agency' ? '/audience'
+                   : isAgency ? '/agency'
                    : '/youtube';
         navigate(dest);
-      }, 1000);
+      }, 800);
     } catch (err) {
       setError(err.message || 'Invalid email or password');
     } finally {
@@ -138,8 +140,46 @@ export default function Login({ onLoginSuccess }) {
           <div style={{ position: 'absolute', inset: '50% 0 auto', borderTop: '1px solid var(--border-color)' }} />
           <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
             <span style={{ background: 'var(--bg-color)', padding: '0 1rem', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', fontWeight: 500 }}>
-              Or continue with
+              Or continue with email
             </span>
+          </div>
+        </div>
+
+        {/* Quick Role Fill Pills for Testing */}
+        <div style={{ marginBottom: '1.25rem' }}>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Select Demo Account Role
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
+            {[
+              { role: 'Creator', email: 'creator@creatoriq.com', label: 'Creator', icon: '🎥' },
+              { role: 'Agency', email: 'agency@creatoriq.com', label: 'Agency', icon: '🏢' },
+              { role: 'Marketing Team', email: 'marketing@creatoriq.com', label: 'Marketing Team', icon: '📊' },
+              { role: 'Administrator', email: 'admin@creatoriq.com', label: 'Administrator', icon: '⚡' },
+            ].map(r => (
+              <button
+                key={r.role}
+                type="button"
+                onClick={() => setForm({ email: r.email, password: 'password123' })}
+                style={{
+                  padding: '0.5rem 0.65rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  borderRadius: '0.5rem',
+                  border: form.email === r.email ? '1px solid var(--brand-500)' : '1px solid var(--border-color)',
+                  background: form.email === r.email ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.03)',
+                  color: form.email === r.email ? 'var(--brand-400)' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <span>{r.icon}</span>
+                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.label}</span>
+              </button>
+            ))}
           </div>
         </div>
 

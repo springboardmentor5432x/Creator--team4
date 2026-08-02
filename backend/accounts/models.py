@@ -112,9 +112,65 @@ class AudienceInsightProfile(models.Model):
     def __str__(self):
         return f"{self.platform} Audience - {self.user.username}"
 
+class AgencyProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='agency_profile')
+    agency_name = models.CharField(max_length=255, default='Apex Creator Management')
+    logo_url = models.CharField(max_length=1000, blank=True, null=True)
+    commission_rate = models.FloatField(default=15.0)  # Default 15% agency cut
+    contact_email = models.CharField(max_length=255, blank=True, null=True)
+    currency = models.CharField(max_length=10, default='₹')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.agency_name} ({self.user.username})"
+
+class AgencyCreatorRelation(models.Model):
+    agency = models.ForeignKey(User, on_delete=models.CASCADE, related_name='managed_creators')
+    creator_name = models.CharField(max_length=255)
+    handle = models.CharField(max_length=255)
+    category = models.CharField(max_length=100, default='Tech & Gaming')
+    primary_platform = models.CharField(max_length=100, default='YouTube')
+    followers_count = models.IntegerField(default=500000)
+    engagement_rate = models.FloatField(default=4.5)
+    monthly_revenue = models.DecimalField(max_digits=12, decimal_places=2, default=150000.00)
+    commission_split = models.FloatField(default=15.0) # Agency cut %
+    assigned_manager = models.CharField(max_length=255, default='Priya Sharma')
+    sponsorship_rate = models.DecimalField(max_digits=12, decimal_places=2, default=150000.00)
+    status = models.CharField(max_length=50, default='Active') # Active, Pending, Archived
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.creator_name} (@{self.handle}) - {self.agency.username}"
+
+class AgencyCampaign(models.Model):
+    agency = models.ForeignKey(User, on_delete=models.CASCADE, related_name='agency_campaigns')
+    campaign_name = models.CharField(max_length=255)
+    brand_name = models.CharField(max_length=255)
+    total_budget = models.DecimalField(max_digits=12, decimal_places=2, default=500000.00)
+    target_reach = models.IntegerField(default=1000000)
+    achieved_reach = models.IntegerField(default=850000)
+    status = models.CharField(max_length=50, default='Active') # Active, Draft, Completed
+    start_date = models.DateField(blank=True, null=True)
+    end_date = models.DateField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.campaign_name} ({self.brand_name})"
+
+class AgencyCampaignCreator(models.Model):
+    campaign = models.ForeignKey(AgencyCampaign, on_delete=models.CASCADE, related_name='participating_creators')
+    creator_relation = models.ForeignKey(AgencyCreatorRelation, on_delete=models.CASCADE, related_name='campaign_assignments')
+    deliverable = models.CharField(max_length=255, default='1 Dedicated YouTube Video + 2 IG Reels')
+    payout = models.DecimalField(max_digits=12, decimal_places=2, default=75000.00)
+    deliverable_status = models.CharField(max_length=50, default='In Progress') # Pending, In Progress, Approved, Published
+
+    def __str__(self):
+        return f"{self.creator_relation.creator_name} in {self.campaign.campaign_name}"
+
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
         role = 'Administrator' if instance.is_superuser else 'Creator'
         UserProfile.objects.get_or_create(user=instance, defaults={'role': role})
+
 

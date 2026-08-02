@@ -79,21 +79,21 @@ function AppContent() {
       // If logged in
       if (user.role === 'Administrator') {
         // Administrator granted paths
-        const allowed = ['/admin', '/youtube', '/instagram', '/facebook', '/linkedin', '/twitter', '/workflows', '/reports', '/audience', '/revenue'];
+        const allowed = ['/admin', '/agency', '/youtube', '/instagram', '/facebook', '/linkedin', '/twitter', '/workflows', '/reports', '/audience', '/revenue'];
         if (!allowed.includes(path)) {
           navigate('/admin', { replace: true });
         }
       } else if (user.role === 'Marketing Team') {
         // Marketing Team granted paths (Default: /reports)
-        const allowed = ['/reports', '/workflows', '/youtube', '/instagram', '/facebook', '/linkedin', '/twitter', '/audience', '/revenue'];
+        const allowed = ['/reports', '/youtube', '/instagram', '/facebook', '/linkedin', '/twitter', '/workflows', '/audience', '/revenue'];
         if (!allowed.includes(path)) {
           navigate('/reports', { replace: true });
         }
       } else if (user.role === 'Agency') {
-        // Agency granted paths (Default: /audience)
-        const allowed = ['/audience', '/workflows', '/reports', '/youtube', '/instagram', '/facebook', '/linkedin', '/twitter', '/revenue'];
+        // Agency granted paths (Default: /agency)
+        const allowed = ['/agency', '/workflows', '/reports', '/audience', '/revenue'];
         if (!allowed.includes(path)) {
-          navigate('/audience', { replace: true });
+          navigate('/agency', { replace: true });
         }
       } else {
         // Creator granted paths (Default: /youtube)
@@ -124,6 +124,10 @@ function AppContent() {
       />
 
       {/* Dashboard Routes */}
+      <Route 
+        path="/agency" 
+        element={user ? <DashboardPage user={user} onBack={user.role === 'Administrator' ? () => navigate('/admin') : handleLogout} /> : <Navigate to="/login" replace />} 
+      />
       <Route 
         path="/youtube" 
         element={user ? <DashboardPage user={user} onBack={user.role === 'Administrator' ? () => navigate('/admin') : handleLogout} /> : <Navigate to="/login" replace />} 
@@ -167,7 +171,7 @@ function AppContent() {
         element={<Navigate to={user ? (
           user.role === 'Administrator' ? '/admin' :
           user.role === 'Marketing Team' ? '/reports' :
-          user.role === 'Agency' ? '/audience' : '/youtube'
+          user.role === 'Agency' ? '/agency' : '/youtube'
         ) : '/login'} replace />} 
       />
       <Route 

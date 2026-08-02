@@ -3,6 +3,7 @@ import { api } from '../api';
 
 export default function RevenueAnalytics({
   user,
+  selectedAgencyCreator,
   connectedYtData,
   connectedInstagramFollowers,
   connectedFacebookFollowers,

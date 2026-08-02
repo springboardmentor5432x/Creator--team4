@@ -5,6 +5,9 @@ import RevenueAnalytics from '../components/RevenueAnalytics';
 import ContentAnalytics from '../components/ContentAnalytics';
 import AudienceAnalytics from '../components/AudienceAnalytics';
 import GrowthAnalytics from '../components/GrowthAnalytics';
+import AgencyDashboard from '../components/AgencyDashboard';
+import AnalyticsToolbar from '../components/AnalyticsToolbar';
+import MarketingAnalyticsWorkspace from '../components/MarketingAnalyticsWorkspace';
 
 
 export default function Dashboard({ user, onBack }) {
@@ -279,6 +282,8 @@ export default function Dashboard({ user, onBack }) {
     try { const s = localStorage.getItem('creatoriq_user'); if (s) return JSON.parse(s).twitter_display_name || null; } catch (e) {}
     return user.twitter_display_name || null;
   });
+
+  const [analyticsDateFilter, setAnalyticsDateFilter] = useState('30d');
   const [connectedTwitterPicture, setConnectedTwitterPicture] = useState(() => {
     try { const s = localStorage.getItem('creatoriq_user'); if (s) return JSON.parse(s).twitter_profile_picture || null; } catch (e) {}
     return user.twitter_profile_picture || null;
@@ -344,7 +349,35 @@ export default function Dashboard({ user, onBack }) {
   const [fbVideos, setFbVideos] = useState([]);
   const [loadingFbMeta, setLoadingFbMeta] = useState(false);
 
-  const activeTab = ['/youtube', '/instagram', '/facebook', '/linkedin', '/twitter', '/workflows', '/reports', '/audience', '/revenue'].includes(currentPath) ? currentPath.substring(1) : 'youtube';
+  const [agencyCreators, setAgencyCreators] = useState([]);
+  const [selectedAgencyCreatorId, setSelectedAgencyCreatorId] = useState('all');
+
+  useEffect(() => {
+    if (user.role === 'Agency' || user.role === 'Administrator') {
+      api.getAgencyCreators().then(data => {
+        if (data && data.creators) {
+          setAgencyCreators(data.creators);
+        }
+      }).catch(err => console.error('[AGENCY CREATORS FETCH ERROR]', err));
+    }
+  }, [user.role]);
+
+  const selectedAgencyCreatorObject = selectedAgencyCreatorId === 'all'
+    ? null
+    : agencyCreators.find(c => String(c.id) === String(selectedAgencyCreatorId)) || null;
+
+  const validRoleTabs = user.role === 'Agency'
+    ? ['agency', 'workflows', 'reports', 'audience', 'revenue']
+    : user.role === 'Marketing Team'
+    ? ['reports', 'workflows', 'audience', 'revenue']
+    : user.role === 'Creator'
+    ? ['youtube', 'instagram', 'facebook', 'linkedin', 'twitter', 'workflows', 'reports', 'audience', 'revenue']
+    : ['admin', 'agency', 'youtube', 'instagram', 'facebook', 'linkedin', 'twitter', 'workflows', 'reports', 'audience', 'revenue'];
+
+  const rawTab = currentPath.substring(1) || '';
+  const activeTab = validRoleTabs.includes(rawTab)
+    ? rawTab
+    : (user.role === 'Agency' ? 'agency' : user.role === 'Marketing Team' ? 'reports' : 'youtube');
   const [publicMode, setPublicMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('mrbeast');
   const [ytData, setYtData] = useState(null);
@@ -1426,112 +1459,118 @@ export default function Dashboard({ user, onBack }) {
 
           {/* Navigation Links */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', paddingLeft: '0.5rem', marginBottom: '0.25rem' }}>
-              Channels
-            </span>
+            {/* Channels section - only visible for Creators and Administrators */}
+            {(user.role === 'Creator' || user.role === 'Administrator') && (
+              <>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', paddingLeft: '0.5rem', marginBottom: '0.25rem' }}>
+                  Channels
+                </span>
 
-            {[
-              { id: 'youtube', label: 'YouTube', color: '#ff0000', svg: <path fill="#ff0000" d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.518 3.545 12 3.545 12 3.545s-7.518 0-9.388.507a3.003 3.003 0 0 0-2.11 2.11C0 8.033 0 12 0 12s0 3.967.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.87.507 9.388.507 9.388.507s7.518 0 9.388-.507a3.003 3.003 0 0 0 2.11-2.11C24 15.967 24 12 24 12s0-3.967-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/> },
-              { id: 'instagram', label: 'Instagram', color: '#e1306c', svg: <path fill="#e1306c" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/> },
-              { id: 'facebook', label: 'Facebook', color: '#1877f2', svg: <path fill="#1877f2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/> },
-              { id: 'twitter', label: 'Twitter / X', color: '#1da1f2', svg: <path fill="#000" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.632zm-1.161 17.52h1.833L7.084 4.126H5.117z"/> },
-              { id: 'linkedin', label: 'LinkedIn', color: '#0077b5', svg: <path fill="#0077b5" d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/> }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => { navigate('/' + tab.id); setError(''); }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  width: '100%',
-                  padding: '0.75rem 1rem',
-                  border: 'none',
-                  borderRadius: '0.75rem',
-                  background: activeTab === tab.id ? 'var(--card-muted-bg)' : 'transparent',
-                  color: activeTab === tab.id ? 'var(--text-primary)' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  fontFamily: 'inherit',
-                  transition: 'all 0.2s ease',
-                  textAlign: 'left',
-                }}
-                onMouseEnter={(e) => {
-                  if (activeTab !== tab.id) e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
-                }}
-                onMouseLeave={(e) => {
-                  if (activeTab !== tab.id) e.currentTarget.style.background = 'transparent';
-                }}
-              >
-                <svg
-                  style={{ width: '1.1rem', height: '1.1rem', flexShrink: 0 }}
-                  viewBox="0 0 24 24"
-                >
-                  {tab.svg}
-                </svg>
-                {tab.label}
-                {tab.id === 'youtube' && (
-                  <span style={{ marginLeft: 'auto', fontSize: '0.65rem', background: 'rgba(16,185,129,0.1)', color: 'var(--emerald-400)', padding: '0.1rem 0.35rem', borderRadius: '0.25rem', fontWeight: 700 }}>
-                    {connectedChannelId ? 'LINKED' : 'LIVE'}
-                  </span>
-                )}
-                {tab.id === 'linkedin' && (
-                  <span style={{ marginLeft: 'auto', fontSize: '0.65rem', background: connectedLinkedinId ? 'rgba(16,185,129,0.1)' : 'rgba(100,100,100,0.15)', color: connectedLinkedinId ? 'var(--emerald-400)' : 'var(--text-muted)', padding: '0.1rem 0.35rem', borderRadius: '0.25rem', fontWeight: 700 }}>
-                    {connectedLinkedinId ? 'LINKED' : 'NOT CONNECTED'}
-                  </span>
-                )}
-                {tab.id === 'instagram' && (
-                  <span style={{
-                    marginLeft: 'auto',
-                    fontSize: '0.65rem',
-                    background: connectedInstagramId ? (connectedInstagramVerifiedMeta ? 'rgba(59,130,246,0.15)' : 'rgba(16,185,129,0.1)') : 'rgba(100,100,100,0.15)',
-                    color: connectedInstagramId ? (connectedInstagramVerifiedMeta ? '#3b82f6' : 'var(--emerald-400)') : 'var(--text-muted)',
-                    padding: '0.1rem 0.35rem',
-                    borderRadius: '0.25rem',
-                    fontWeight: 700
-                  }}>
-                    {connectedInstagramId ? (connectedInstagramVerifiedMeta ? 'META LINKED' : 'LINKED') : 'NOT CONNECTED'}
-                  </span>
-                )}
-                {tab.id === 'facebook' && (
-                  <span style={{
-                    marginLeft: 'auto',
-                    fontSize: '0.65rem',
-                    background: connectedFacebookId ? (connectedFacebookVerifiedMeta ? 'rgba(59,130,246,0.15)' : 'rgba(16,185,129,0.1)') : 'rgba(100,100,100,0.15)',
-                    color: connectedFacebookId ? (connectedFacebookVerifiedMeta ? '#3b82f6' : 'var(--emerald-400)') : 'var(--text-muted)',
-                    padding: '0.1rem 0.35rem',
-                    borderRadius: '0.25rem',
-                    fontWeight: 700
-                  }}>
-                    {connectedFacebookId ? (connectedFacebookVerifiedMeta ? 'META LINKED' : 'LINKED') : 'NOT CONNECTED'}
-                  </span>
-                )}
-                {tab.id === 'twitter' && (
-                  <span style={{
-                    marginLeft: 'auto',
-                    fontSize: '0.65rem',
-                    background: connectedTwitterUsername ? 'rgba(29,161,242,0.15)' : 'rgba(100,100,100,0.15)',
-                    color: connectedTwitterUsername ? '#1da1f2' : 'var(--text-muted)',
-                    padding: '0.1rem 0.35rem',
-                    borderRadius: '0.25rem',
-                    fontWeight: 700
-                  }}>
-                    {connectedTwitterUsername ? 'LINKED' : 'NOT CONNECTED'}
-                  </span>
-                )}
-              </button>
-            ))}
+                {[
+                  { id: 'youtube', label: 'YouTube', color: '#ff0000', svg: <path fill="#ff0000" d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.518 3.545 12 3.545 12 3.545s-7.518 0-9.388.507a3.003 3.003 0 0 0-2.11 2.11C0 8.033 0 12 0 12s0 3.967.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.87.507 9.388.507 9.388.507s7.518 0 9.388-.507a3.003 3.003 0 0 0 2.11-2.11C24 15.967 24 12 24 12s0-3.967-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/> },
+                  { id: 'instagram', label: 'Instagram', color: '#e1306c', svg: <path fill="#e1306c" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/> },
+                  { id: 'facebook', label: 'Facebook', color: '#1877f2', svg: <path fill="#1877f2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/> },
+                  { id: 'twitter', label: 'Twitter / X', color: '#1da1f2', svg: <path fill="#000" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.632zm-1.161 17.52h1.833L7.084 4.126H5.117z"/> },
+                  { id: 'linkedin', label: 'LinkedIn', color: '#0077b5', svg: <path fill="#0077b5" d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/> }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => { navigate('/' + tab.id); setError(''); }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      border: 'none',
+                      borderRadius: '0.75rem',
+                      background: activeTab === tab.id ? 'var(--card-muted-bg)' : 'transparent',
+                      color: activeTab === tab.id ? 'var(--text-primary)' : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      fontFamily: 'inherit',
+                      transition: 'all 0.2s ease',
+                      textAlign: 'left',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (activeTab !== tab.id) e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeTab !== tab.id) e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
+                    <svg
+                      style={{ width: '1.1rem', height: '1.1rem', flexShrink: 0 }}
+                      viewBox="0 0 24 24"
+                    >
+                      {tab.svg}
+                    </svg>
+                    {tab.label}
+                    {tab.id === 'youtube' && (
+                      <span style={{ marginLeft: 'auto', fontSize: '0.65rem', background: 'rgba(16,185,129,0.1)', color: 'var(--emerald-400)', padding: '0.1rem 0.35rem', borderRadius: '0.25rem', fontWeight: 700 }}>
+                        {connectedChannelId ? 'LINKED' : 'LIVE'}
+                      </span>
+                    )}
+                    {tab.id === 'linkedin' && (
+                      <span style={{ marginLeft: 'auto', fontSize: '0.65rem', background: connectedLinkedinId ? 'rgba(16,185,129,0.1)' : 'rgba(100,100,100,0.15)', color: connectedLinkedinId ? 'var(--emerald-400)' : 'var(--text-muted)', padding: '0.1rem 0.35rem', borderRadius: '0.25rem', fontWeight: 700 }}>
+                        {connectedLinkedinId ? 'LINKED' : 'NOT CONNECTED'}
+                      </span>
+                    )}
+                    {tab.id === 'instagram' && (
+                      <span style={{
+                        marginLeft: 'auto',
+                        fontSize: '0.65rem',
+                        background: connectedInstagramId ? (connectedInstagramVerifiedMeta ? 'rgba(59,130,246,0.15)' : 'rgba(16,185,129,0.1)') : 'rgba(100,100,100,0.15)',
+                        color: connectedInstagramId ? (connectedInstagramVerifiedMeta ? '#3b82f6' : 'var(--emerald-400)') : 'var(--text-muted)',
+                        padding: '0.1rem 0.35rem',
+                        borderRadius: '0.25rem',
+                        fontWeight: 700
+                      }}>
+                        {connectedInstagramId ? (connectedInstagramVerifiedMeta ? 'META LINKED' : 'LINKED') : 'NOT CONNECTED'}
+                      </span>
+                    )}
+                    {tab.id === 'facebook' && (
+                      <span style={{
+                        marginLeft: 'auto',
+                        fontSize: '0.65rem',
+                        background: connectedFacebookId ? (connectedFacebookVerifiedMeta ? 'rgba(59,130,246,0.15)' : 'rgba(16,185,129,0.1)') : 'rgba(100,100,100,0.15)',
+                        color: connectedFacebookId ? (connectedFacebookVerifiedMeta ? '#3b82f6' : 'var(--emerald-400)') : 'var(--text-muted)',
+                        padding: '0.1rem 0.35rem',
+                        borderRadius: '0.25rem',
+                        fontWeight: 700
+                      }}>
+                        {connectedFacebookId ? (connectedFacebookVerifiedMeta ? 'META LINKED' : 'LINKED') : 'NOT CONNECTED'}
+                      </span>
+                    )}
+                    {tab.id === 'twitter' && (
+                      <span style={{
+                        marginLeft: 'auto',
+                        fontSize: '0.65rem',
+                        background: connectedTwitterUsername ? 'rgba(29,161,242,0.15)' : 'rgba(100,100,100,0.15)',
+                        color: connectedTwitterUsername ? '#1da1f2' : 'var(--text-muted)',
+                        padding: '0.1rem 0.35rem',
+                        borderRadius: '0.25rem',
+                        fontWeight: 700
+                      }}>
+                        {connectedTwitterUsername ? 'LINKED' : 'NOT CONNECTED'}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </>
+            )}
 
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', paddingLeft: '0.5rem', marginTop: '1rem', marginBottom: '0.25rem' }}>
-              Tools
+              {user.role === 'Agency' ? 'Agency Suite' : 'Tools'}
             </span>
 
             {[
-              { id: 'workflows', label: 'Workflows', svg: <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /> },
-              { id: 'reports', label: 'Trend Reports', svg: <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M18 20V10M12 20V4M6 20v-6" /> },
-              { id: 'audience', label: 'Audience Insights', svg: <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm14 14v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /> },
-              { id: 'revenue', label: 'Revenue Analytics', svg: <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /> }
-            ].map(tab => (
+              { id: 'agency', label: 'Agency Dashboard', roles: ['Agency', 'Administrator'], svg: <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5" /> },
+              { id: 'workflows', label: 'Workflows', roles: ['Creator', 'Agency', 'Marketing Team', 'Administrator'], svg: <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /> },
+              { id: 'reports', label: 'Trend Reports', roles: ['Creator', 'Agency', 'Marketing Team', 'Administrator'], svg: <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M18 20V10M12 20V4M6 20v-6" /> },
+              { id: 'audience', label: 'Audience Insights', roles: ['Creator', 'Agency', 'Marketing Team', 'Administrator'], svg: <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm14 14v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /> },
+              { id: 'revenue', label: 'Revenue Analytics', roles: ['Creator', 'Agency', 'Marketing Team', 'Administrator'], svg: <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /> }
+            ].filter(tab => tab.roles.includes(user.role)).map(tab => (
               <button
                 key={tab.id}
                 onClick={() => { navigate('/' + tab.id); setError(''); }}
@@ -1617,6 +1656,67 @@ export default function Dashboard({ user, onBack }) {
          ======================================================== */}
       <div className="print-main-content" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto', background: 'var(--bg-color)' }}>
         
+        {/* Global Creator Context Bar for Agency Users */}
+        {(user.role === 'Agency' || user.role === 'Administrator') && activeTab !== 'agency' && (
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(99, 102, 241, 0.08) 100%)',
+            borderBottom: '1px solid var(--border-color)',
+            padding: '14px 28px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '16px',
+            flexShrink: 0
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                width: '38px', height: '38px', borderRadius: '50%',
+                background: 'var(--brand-600)', color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: '700', fontSize: '18px'
+              }}>
+                👤
+              </div>
+              <div>
+                <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--brand-300)', fontWeight: '700' }}>
+                  Agency Active Creator Context
+                </div>
+                <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' }}>
+                  {selectedAgencyCreatorId === 'all' 
+                    ? 'Displaying Combined Roster Analytics for All Managed Creators' 
+                    : `Filtered for creator: ${selectedAgencyCreatorObject?.creator_name} (@${selectedAgencyCreatorObject?.handle}) • ${selectedAgencyCreatorObject?.category}`}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>Select Creator:</span>
+              <select
+                value={selectedAgencyCreatorId}
+                onChange={(e) => setSelectedAgencyCreatorId(e.target.value)}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--brand-500)',
+                  background: 'var(--card-bg)',
+                  color: 'var(--text-primary)',
+                  fontWeight: '700',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  outline: 'none'
+                }}
+              >
+                <option value="all">🌐 All Managed Creators (Roster Aggregate)</option>
+                {agencyCreators.map(c => (
+                  <option key={c.id} value={c.id}>
+                    👤 {c.creator_name} (@{c.handle}) • {c.category}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+
         {/* ==================== YOUTUBE LIVE TAB ==================== */}
         {activeTab === 'youtube' && (
           // ONBOARDING CONNECT CHANNEL SCREEN IF NOT CONNECTED YET
@@ -3240,10 +3340,28 @@ export default function Dashboard({ user, onBack }) {
           </div>
         )}
 
-        {/* ==================== MODULE 4 – GROWTH & TREND ANALYSIS ==================== */}
+        {/* Floating Global Analytics Toolbar for Date Horizon & Sync */}
+        {['youtube', 'instagram', 'facebook', 'linkedin', 'twitter', 'reports', 'audience', 'revenue'].includes(activeTab) && (
+          <AnalyticsToolbar
+            dateFilter={analyticsDateFilter}
+            setDateFilter={setAnalyticsDateFilter}
+            selectedPlatform={selectedAnalyticsAccount}
+            setSelectedPlatform={setSelectedAnalyticsAccount}
+            onRefresh={handleSyncManual}
+            isSyncing={loadingIgMeta || loadingFbMeta || loadingTwitter || loading}
+            lastSyncedTime="Live Synced"
+          />
+        )}
+
+        {/* ==================== MODULE 4 – GROWTH & TREND ANALYSIS & MARKETING WORKSPACE ==================== */}
         {activeTab === 'reports' && (
-          <GrowthAnalytics
-            user={user}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            {user?.role === 'Marketing Team' && (
+              <MarketingAnalyticsWorkspace user={user} />
+            )}
+            <GrowthAnalytics
+              user={user}
+              selectedAgencyCreator={selectedAgencyCreatorObject}
             connectedYtData={connectedYtData}
             connectedLinkedinId={connectedLinkedinId}
             connectedLinkedinTitle={connectedLinkedinTitle}
@@ -3262,12 +3380,14 @@ export default function Dashboard({ user, onBack }) {
             connectedTwitterFollowers={connectedTwitterFollowers}
             connectedTwitterEngagement={connectedTwitterEngagement}
           />
+          </div>
         )}
 
         {/* ==================== AUDIENCE ANALYTICS MODULE ==================== */}
         {activeTab === 'audience' && (
           <AudienceAnalytics
             user={user}
+            selectedAgencyCreator={selectedAgencyCreatorObject}
             connectedYtData={connectedYtData}
             connectedLinkedinId={connectedLinkedinId}
             connectedLinkedinTitle={connectedLinkedinTitle}
@@ -3293,11 +3413,19 @@ export default function Dashboard({ user, onBack }) {
         {activeTab === 'revenue' && (
           <RevenueAnalytics
             user={user}
+            selectedAgencyCreator={selectedAgencyCreatorObject}
             connectedYtData={connectedYtData}
             connectedInstagramFollowers={connectedInstagramFollowers}
             connectedFacebookFollowers={connectedFacebookFollowers}
             connectedTwitterFollowers={connectedTwitterFollowers}
           />
+        )}
+
+        {/* ==================== AGENCY DASHBOARD MODULE ==================== */}
+        {activeTab === 'agency' && (
+          <div style={{ padding: '2rem', flexGrow: 1, overflowY: 'auto' }}>
+            <AgencyDashboard user={user} />
+          </div>
         )}
 
       </div>

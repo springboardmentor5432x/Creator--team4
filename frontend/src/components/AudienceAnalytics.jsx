@@ -15,6 +15,7 @@ import React, { useState, useMemo } from 'react';
  */
 export default function AudienceAnalytics({
   user,
+  selectedAgencyCreator,
   connectedYtData,
   connectedLinkedinId,
   connectedLinkedinTitle,

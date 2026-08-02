@@ -44,16 +44,18 @@ export default function Signup({ onLoginSuccess }) {
     setError('');
     setSuccess('');
     try {
-      const result = await api.googleLogin(response.credential, form.role);
+      const selectedRole = form.email.toLowerCase().includes('agency') ? 'Agency' : form.role;
+      const result = await api.googleLogin(response.credential, selectedRole);
       setSuccess('Google Login Successful!');
       onLoginSuccess(result.user, result.token);
       setTimeout(() => {
+        const isAgency = result.user.role === 'Agency' || (result.user.email && result.user.email.toLowerCase().includes('agency'));
         const dest = result.user.role === 'Administrator' ? '/admin'
                    : result.user.role === 'Marketing Team' ? '/reports'
-                   : result.user.role === 'Agency' ? '/audience'
+                   : isAgency ? '/agency'
                    : '/youtube';
         navigate(dest);
-      }, 1000);
+      }, 800);
     } catch (err) {
       setError(err.message || 'Google authentication failed');
     } finally {
@@ -113,11 +115,18 @@ export default function Signup({ onLoginSuccess }) {
     setSuccess('');
 
     try {
-      await api.register(form.name, form.email, form.password, form.role);
-      setSuccess('Account created successfully! Redirecting to login...');
+      const selectedRole = form.email.toLowerCase().includes('agency') ? 'Agency' : form.role;
+      const res = await api.register(form.name, form.email, form.password, selectedRole);
+      setSuccess('Account created! Logging into Agency Workspace...');
+      onLoginSuccess(res.user, res.token);
       setTimeout(() => {
-        navigate('/login');
-      }, 1500);
+        const isAgency = res.user.role === 'Agency' || (res.user.email && res.user.email.toLowerCase().includes('agency'));
+        const dest = res.user.role === 'Administrator' ? '/admin'
+                   : res.user.role === 'Marketing Team' ? '/reports'
+                   : isAgency ? '/agency'
+                   : '/youtube';
+        navigate(dest);
+      }, 800);
     } catch (err) {
       setError(err.message || 'Registration failed. Try a different email.');
     } finally {

@@ -18,7 +18,10 @@ except ImportError:
     print("[WARNING] BeautifulSoup4 not installed. Twitter scraping will use fallback.")
 
 from accounts.jwt_utils import generate_jwt, verify_jwt
-from accounts.models import UserProfile, GrowthReport, WorkflowPost, SponsorshipDeal, AudienceInsightProfile
+from accounts.models import (
+    UserProfile, GrowthReport, WorkflowPost, SponsorshipDeal, AudienceInsightProfile,
+    AgencyProfile, AgencyCreatorRelation, AgencyCampaign, AgencyCampaignCreator
+)
 
 
 def scrape_twitter_profile(username):
@@ -371,6 +374,10 @@ def register_view(request):
         if User.objects.filter(username=email).exists():
             return JsonResponse({'error': 'An account with this email already exists'}, status=400)
             
+        # Check if email contains 'agency' or role is Agency
+        if 'agency' in email.lower() or role == 'Agency':
+            role = 'Agency'
+
         # Valid roles check
         valid_roles = ['Creator', 'Agency', 'Marketing Team', 'Administrator']
         if role not in valid_roles:
@@ -430,6 +437,12 @@ def login_view(request):
         
         if user is not None:
             login(request, user)
+            
+            # If email contains 'agency', ensure Agency role
+            if hasattr(user, 'profile') and 'agency' in user.email.lower() and user.profile.role != 'Administrator':
+                user.profile.role = 'Agency'
+                user.profile.save()
+
             token = generate_jwt(user)
             return JsonResponse({
                 'message': 'Login successful',
@@ -2450,3 +2463,431 @@ def get_audience_insights_view(request):
         })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+def _seed_agency_defaults_if_needed(user):
+    agency_prof, created = AgencyProfile.objects.get_or_create(
+        user=user,
+        defaults={
+            'agency_name': 'Apex Talent & Creator Network',
+            'commission_rate': 15.0,
+            'contact_email': user.email or 'contact@apexcreators.com',
+            'currency': '₹'
+        }
+    )
+    
+    # If agency has no managed creators, seed initial high-profile creators
+    if not AgencyCreatorRelation.objects.filter(agency=user).exists():
+        initial_creators = [
+            {
+                'creator_name': 'CodeWithHarry',
+                'handle': 'codewithharry',
+                'category': 'Tech & Coding',
+                'primary_platform': 'YouTube',
+                'followers_count': 4850000,
+                'engagement_rate': 6.8,
+                'monthly_revenue': 420000.00,
+                'commission_split': 15.0,
+                'status': 'Active'
+            },
+            {
+                'creator_name': 'Tech Burner',
+                'handle': 'techburner',
+                'category': 'Tech & Lifestyle',
+                'primary_platform': 'YouTube',
+                'followers_count': 11200000,
+                'engagement_rate': 8.4,
+                'monthly_revenue': 980000.00,
+                'commission_split': 15.0,
+                'status': 'Active'
+            },
+            {
+                'creator_name': 'Shraddha Khapra (Apna College)',
+                'handle': 'shraddhakhapra',
+                'category': 'Education & EdTech',
+                'primary_platform': 'YouTube',
+                'followers_count': 5100000,
+                'engagement_rate': 9.2,
+                'monthly_revenue': 650000.00,
+                'commission_split': 12.5,
+                'status': 'Active'
+            },
+            {
+                'creator_name': 'Tanmay Bhat',
+                'handle': 'tanmaybhat',
+                'category': 'Comedy & Vlogs',
+                'primary_platform': 'YouTube',
+                'followers_count': 4900000,
+                'engagement_rate': 7.5,
+                'monthly_revenue': 820000.00,
+                'commission_split': 18.0,
+                'status': 'Active'
+            },
+            {
+                'creator_name': 'Ankur Warikoo',
+                'handle': 'ankurwarikoo',
+                'category': 'Finance & Productivity',
+                'primary_platform': 'LinkedIn',
+                'followers_count': 2300000,
+                'engagement_rate': 5.4,
+                'monthly_revenue': 510000.00,
+                'commission_split': 15.0,
+                'status': 'Active'
+            }
+        ]
+        for cdata in initial_creators:
+            AgencyCreatorRelation.objects.create(agency=user, **cdata)
+
+    # Seed initial campaigns if none exist
+    if not AgencyCampaign.objects.filter(agency=user).exists():
+        c1 = AgencyCampaign.objects.create(
+            agency=user,
+            campaign_name='Samsung Galaxy Unpacked Q3',
+            brand_name='Samsung India',
+            total_budget=1800000.00,
+            target_reach=5000000,
+            achieved_reach=4400000,
+            status='Active'
+        )
+        c2 = AgencyCampaign.objects.create(
+            agency=user,
+            campaign_name='Intel Core i9 Launch Series',
+            brand_name='Intel',
+            total_budget=1200000.00,
+            target_reach=3000000,
+            achieved_reach=3100000,
+            status='Completed'
+        )
+        c3 = AgencyCampaign.objects.create(
+            agency=user,
+            campaign_name='Asus ROG Phone 8 Fest',
+            brand_name='Asus India',
+            total_budget=950000.00,
+            target_reach=2000000,
+            achieved_reach=1200000,
+            status='Active'
+        )
+
+    return agency_prof
+
+
+@csrf_exempt
+def get_agency_overview_view(request):
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Only GET method allowed'}, status=405)
+    try:
+        user = get_authenticated_user(request)
+        agency_prof = _seed_agency_defaults_if_needed(user)
+
+        creators = AgencyCreatorRelation.objects.filter(agency=user, status='Active')
+        total_creators = creators.count()
+        total_reach = sum(c.followers_count for c in creators)
+        avg_engagement = round(sum(c.engagement_rate for c in creators) / max(total_creators, 1), 2)
+        total_monthly_revenue = sum(float(c.monthly_revenue) for c in creators)
+        agency_cut_amount = round(total_monthly_revenue * (agency_prof.commission_rate / 100.0), 2)
+        creator_payout_amount = round(total_monthly_revenue - agency_cut_amount, 2)
+
+        # Top Performing Creator
+        top_creator = creators.order_by('-monthly_revenue').first()
+        top_creator_data = None
+        if top_creator:
+            top_creator_data = {
+                'id': top_creator.id,
+                'name': top_creator.creator_name,
+                'handle': top_creator.handle,
+                'category': top_creator.category,
+                'followers': top_creator.followers_count,
+                'engagement': top_creator.engagement_rate,
+                'revenue': float(top_creator.monthly_revenue),
+                'platform': top_creator.primary_platform
+            }
+
+        campaigns = AgencyCampaign.objects.filter(agency=user)
+
+        return JsonResponse({
+            'agency': {
+                'name': agency_prof.agency_name,
+                'commission_rate': agency_prof.commission_rate,
+                'currency': agency_prof.currency,
+                'contact_email': agency_prof.contact_email
+            },
+            'kpis': {
+                'total_creators': total_creators,
+                'total_reach': total_reach,
+                'avg_engagement': avg_engagement,
+                'total_revenue': total_monthly_revenue,
+                'agency_cut': agency_cut_amount,
+                'creator_payout': creator_payout_amount,
+                'active_campaigns_count': campaigns.filter(status='Active').count()
+            },
+            'top_creator': top_creator_data,
+            'recent_campaigns': [
+                {
+                    'id': camp.id,
+                    'name': camp.campaign_name,
+                    'brand': camp.brand_name,
+                    'budget': float(camp.total_budget),
+                    'target_reach': camp.target_reach,
+                    'achieved_reach': camp.achieved_reach,
+                    'status': camp.status
+                } for camp in campaigns[:4]
+            ]
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def manage_agency_creators_view(request):
+    try:
+        user = get_authenticated_user(request)
+        _seed_agency_defaults_if_needed(user)
+
+        if request.method == 'GET':
+            creators = AgencyCreatorRelation.objects.filter(agency=user).order_by('-monthly_revenue')
+            data = [
+                {
+                    'id': c.id,
+                    'creator_name': c.creator_name,
+                    'handle': c.handle,
+                    'category': c.category,
+                    'primary_platform': c.primary_platform,
+                    'followers_count': c.followers_count,
+                    'engagement_rate': c.engagement_rate,
+                    'monthly_revenue': float(c.monthly_revenue),
+                    'commission_split': c.commission_split,
+                    'assigned_manager': getattr(c, 'assigned_manager', 'Priya Sharma'),
+                    'sponsorship_rate': float(getattr(c, 'sponsorship_rate', 150000.00)),
+                    'status': c.status
+                } for c in creators
+            ]
+            return JsonResponse({'creators': data})
+
+        elif request.method == 'POST':
+            body = json.loads(request.body.decode('utf-8'))
+            name = body.get('creator_name')
+            handle = body.get('handle', '').strip().lstrip('@')
+            category = body.get('category', 'Tech & Lifestyle')
+            platform = body.get('primary_platform', 'YouTube')
+            followers = int(body.get('followers_count', 100000))
+            engagement = float(body.get('engagement_rate', 5.0))
+            revenue = float(body.get('monthly_revenue', 50000.00))
+            split = float(body.get('commission_split', 15.0))
+            manager = body.get('assigned_manager', 'Priya Sharma')
+            rate = float(body.get('sponsorship_rate', 150000.00))
+
+            if not name or not handle:
+                return JsonResponse({'error': 'Creator name and handle are required'}, status=400)
+
+            creator = AgencyCreatorRelation.objects.create(
+                agency=user,
+                creator_name=name,
+                handle=handle,
+                category=category,
+                primary_platform=platform,
+                followers_count=followers,
+                engagement_rate=engagement,
+                monthly_revenue=revenue,
+                commission_split=split,
+                assigned_manager=manager,
+                sponsorship_rate=rate,
+                status='Active'
+            )
+            return JsonResponse({'message': 'Creator added successfully', 'id': creator.id}, status=201)
+
+        elif request.method == 'DELETE':
+            creator_id = request.GET.get('id')
+            if not creator_id:
+                return JsonResponse({'error': 'Creator ID required'}, status=400)
+            AgencyCreatorRelation.objects.filter(agency=user, id=creator_id).delete()
+            return JsonResponse({'message': 'Creator removed successfully'})
+
+        else:
+            return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def compare_agency_creators_view(request):
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Only GET method allowed'}, status=405)
+    try:
+        user = get_authenticated_user(request)
+        _seed_agency_defaults_if_needed(user)
+
+        ids_param = request.GET.get('ids', '')
+        if ids_param:
+            ids = [int(i) for i in ids_param.split(',') if i.isdigit()]
+            creators = AgencyCreatorRelation.objects.filter(agency=user, id__in=ids)
+        else:
+            creators = AgencyCreatorRelation.objects.filter(agency=user)[:4]
+
+        comparison_data = [
+            {
+                'id': c.id,
+                'name': c.creator_name,
+                'handle': c.handle,
+                'category': c.category,
+                'platform': c.primary_platform,
+                'followers': c.followers_count,
+                'engagement': c.engagement_rate,
+                'revenue': float(c.monthly_revenue),
+                'commission_split': c.commission_split,
+                'growth_trend': [
+                    round(c.followers_count * 0.82),
+                    round(c.followers_count * 0.88),
+                    round(c.followers_count * 0.94),
+                    c.followers_count
+                ]
+            } for c in creators
+        ]
+        return JsonResponse({'comparison': comparison_data})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def get_agency_revenue_view(request):
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Only GET method allowed'}, status=405)
+    try:
+        user = get_authenticated_user(request)
+        agency_prof = _seed_agency_defaults_if_needed(user)
+
+        creators = AgencyCreatorRelation.objects.filter(agency=user, status='Active')
+        total_revenue = sum(float(c.monthly_revenue) for c in creators)
+        agency_commission_cut = agency_prof.commission_rate
+        agency_revenue = round(total_revenue * (agency_commission_cut / 100.0), 2)
+        creator_payouts = round(total_revenue - agency_revenue, 2)
+
+        # Revenue Stream breakdown
+        streams = [
+            {'name': 'Brand Sponsorships', 'percentage': 52, 'amount': round(total_revenue * 0.52, 2)},
+            {'name': 'Platform AdSense / Ad Revenue', 'percentage': 28, 'amount': round(total_revenue * 0.28, 2)},
+            {'name': 'Affiliate Marketing & Links', 'percentage': 12, 'amount': round(total_revenue * 0.12, 2)},
+            {'name': 'Courses & Merch Sales', 'percentage': 8, 'amount': round(total_revenue * 0.08, 2)},
+        ]
+
+        # Creator Revenue Leaderboard
+        leaderboard = [
+            {
+                'id': c.id,
+                'name': c.creator_name,
+                'handle': c.handle,
+                'total_revenue': float(c.monthly_revenue),
+                'agency_cut': round(float(c.monthly_revenue) * (c.commission_split / 100.0), 2),
+                'net_payout': round(float(c.monthly_revenue) * ((100 - c.commission_split) / 100.0), 2),
+                'split_percent': c.commission_split
+            } for c in creators.order_by('-monthly_revenue')
+        ]
+
+        # Historical Monthly Trend
+        monthly_trend = [
+            {'month': 'Mar', 'total': round(total_revenue * 0.72), 'agency_cut': round(total_revenue * 0.72 * 0.15)},
+            {'month': 'Apr', 'total': round(total_revenue * 0.80), 'agency_cut': round(total_revenue * 0.80 * 0.15)},
+            {'month': 'May', 'total': round(total_revenue * 0.85), 'agency_cut': round(total_revenue * 0.85 * 0.15)},
+            {'month': 'Jun', 'total': round(total_revenue * 0.92), 'agency_cut': round(total_revenue * 0.92 * 0.15)},
+            {'month': 'Jul', 'total': round(total_revenue * 0.97), 'agency_cut': round(total_revenue * 0.97 * 0.15)},
+            {'month': 'Aug (Current)', 'total': round(total_revenue), 'agency_cut': agency_revenue},
+        ]
+
+        return JsonResponse({
+            'currency': agency_prof.currency,
+            'summary': {
+                'total_revenue': total_revenue,
+                'agency_commission_cut': agency_commission_cut,
+                'agency_net_earnings': agency_revenue,
+                'creator_payouts': creator_payouts
+            },
+            'streams': streams,
+            'leaderboard': leaderboard,
+            'monthly_trend': monthly_trend
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def manage_agency_campaigns_view(request):
+    try:
+        user = get_authenticated_user(request)
+        _seed_agency_defaults_if_needed(user)
+
+        if request.method == 'GET':
+            campaigns = AgencyCampaign.objects.filter(agency=user).order_by('-created_at')
+            data = [
+                {
+                    'id': c.id,
+                    'campaign_name': c.campaign_name,
+                    'brand_name': c.brand_name,
+                    'total_budget': float(c.total_budget),
+                    'target_reach': c.target_reach,
+                    'achieved_reach': c.achieved_reach,
+                    'status': c.status
+                } for c in campaigns
+            ]
+            return JsonResponse({'campaigns': data})
+
+        elif request.method == 'POST':
+            body = json.loads(request.body.decode('utf-8'))
+            name = body.get('campaign_name')
+            brand = body.get('brand_name')
+            budget = float(body.get('total_budget', 500000.00))
+            reach = int(body.get('target_reach', 1000000))
+            status = body.get('status', 'Active')
+
+            if not name or not brand:
+                return JsonResponse({'error': 'Campaign name and brand name are required'}, status=400)
+
+            camp = AgencyCampaign.objects.create(
+                agency=user,
+                campaign_name=name,
+                brand_name=brand,
+                total_budget=budget,
+                target_reach=reach,
+                achieved_reach=int(reach * 0.4),
+                status=status
+            )
+            return JsonResponse({'message': 'Campaign created successfully', 'id': camp.id}, status=201)
+
+        else:
+            return JsonResponse({'error': 'Method not allowed'}, status=405)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def manage_agency_settings_view(request):
+    try:
+        user = get_authenticated_user(request)
+        agency_prof = _seed_agency_defaults_if_needed(user)
+
+        if request.method == 'GET':
+            return JsonResponse({
+                'agency_name': agency_prof.agency_name,
+                'logo_url': agency_prof.logo_url,
+                'commission_rate': agency_prof.commission_rate,
+                'contact_email': agency_prof.contact_email,
+                'currency': agency_prof.currency,
+                'team_members': [
+                    {'name': f"{user.first_name} {user.last_name}".strip() or user.username, 'email': user.email, 'role': 'Agency Admin / Owner', 'status': 'Active'},
+                    {'name': 'Priya Sharma', 'email': 'priya@apexcreators.com', 'role': 'Talent Manager', 'status': 'Active'},
+                    {'name': 'Rahul Verma', 'email': 'rahul@apexcreators.com', 'role': 'Campaign Operations', 'status': 'Active'}
+                ]
+            })
+
+        elif request.method == 'POST':
+            body = json.loads(request.body.decode('utf-8'))
+            agency_prof.agency_name = body.get('agency_name', agency_prof.agency_name)
+            agency_prof.commission_rate = float(body.get('commission_rate', agency_prof.commission_rate))
+            agency_prof.contact_email = body.get('contact_email', agency_prof.contact_email)
+            agency_prof.save()
+            return JsonResponse({'message': 'Agency settings saved successfully'})
+
+        else:
+            return JsonResponse({'error': 'Method not allowed'}, status=405)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
