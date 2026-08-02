@@ -23,7 +23,6 @@ async function request(path, options = {}) {
       ...options,
     });
   } catch (fetchErr) {
-    // Handle local fetch network errors when server is unreachable
     console.warn(`[API NETWORK ERROR] ${path}`, fetchErr);
     throw new Error("Cannot connect to server. Please ensure backend is running at http://127.0.0.1:8000.");
   }
@@ -56,37 +55,210 @@ async function request(path, options = {}) {
 }
 
 export const api = {
-  register: (payload) =>
-    request("/register", {
-      method: "POST",
+  // Authentication
+  register: (nameOrObj, email, password, role) => {
+    let payload = {};
+    if (typeof nameOrObj === 'object' && nameOrObj !== null) {
+      payload = nameOrObj;
+    } else {
+      payload = { name: nameOrObj, email, password, role: role || 'Creator' };
+    }
+    return request('/register/', {
+      method: 'POST',
       body: JSON.stringify(payload),
+    });
+  },
+
+  login: (emailOrObj, password) => {
+    let payload = {};
+    if (typeof emailOrObj === 'object' && emailOrObj !== null) {
+      payload = emailOrObj;
+    } else {
+      payload = { email: emailOrObj, password };
+    }
+    return request('/login/', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  googleLogin: (credentialOrObj, role) => {
+    let payload = {};
+    if (typeof credentialOrObj === 'object' && credentialOrObj !== null) {
+      payload = credentialOrObj;
+    } else {
+      payload = { credential: credentialOrObj, token: credentialOrObj, role };
+    }
+    return request('/google-login/', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  me: () => request('/me/'),
+  getMe: () => request('/me/'),
+
+  // YouTube Integrations
+  getYoutubeChannel: (query = '', channelId = '') => {
+    const q = encodeURIComponent(query);
+    const c = encodeURIComponent(channelId);
+    return request(`/youtube/channel/?q=${q}&channelId=${c}`, { method: 'GET' });
+  },
+
+  connectYoutube: (channelIdOrObj, channelTitle) => {
+    let payload = {};
+    if (typeof channelIdOrObj === 'object' && channelIdOrObj !== null) {
+      payload = channelIdOrObj;
+    } else {
+      payload = { channelId: channelIdOrObj, channelTitle };
+    }
+    return request('/users/connect-youtube/', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  disconnectYoutube: () =>
+    request('/users/disconnect-youtube/', {
+      method: 'POST',
     }),
 
-  login: (payload) =>
-    request("/login", {
-      method: "POST",
-      body: JSON.stringify(payload),
+  getConfig: () => request('/config/'),
+
+  // LinkedIn
+  connectLinkedin: (code, redirectUri) =>
+    request('/users/connect-linkedin/', {
+      method: 'POST',
+      body: JSON.stringify({ code, redirectUri }),
     }),
 
-  googleLogin: (payload) =>
-  request("/google-login", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  }),
-
-  getMe: () =>
-    request("/me"),
-
-  connectYoutube: (payload) =>
-    request("/users/connect-youtube", {
-      method: "POST",
-      body: JSON.stringify(payload),
+  disconnectLinkedin: () =>
+    request('/users/disconnect-linkedin/', {
+      method: 'POST',
     }),
 
-  connectInstagram: (payload) =>
-    request("/users/connect-instagram", {
-      method: "POST",
-      body: JSON.stringify(payload),
+  // Instagram
+  connectInstagram: (usernameOrObj) => {
+    const username = typeof usernameOrObj === 'object' ? usernameOrObj.username : usernameOrObj;
+    return request('/users/connect-instagram/', {
+      method: 'POST',
+      body: JSON.stringify({ username }),
+    });
+  },
+
+  disconnectInstagram: () =>
+    request('/users/disconnect-instagram/', {
+      method: 'POST',
+    }),
+
+  getInstagramAnalytics: () =>
+    request('/instagram/analytics/', {
+      method: 'GET',
+    }),
+
+  // Facebook
+  connectFacebook: (pageName, groupId = '') =>
+    request('/users/connect-facebook/', {
+      method: 'POST',
+      body: JSON.stringify({ pageName, groupId }),
+    }),
+
+  disconnectFacebook: () =>
+    request('/users/disconnect-facebook/', {
+      method: 'POST',
+    }),
+
+  getFacebookAnalytics: () =>
+    request('/facebook/analytics/', {
+      method: 'GET',
+    }),
+
+  // Twitter / X
+  connectTwitter: (username) =>
+    request('/users/connect-twitter/', {
+      method: 'POST',
+      body: JSON.stringify({ username }),
+    }),
+
+  disconnectTwitter: () =>
+    request('/users/disconnect-twitter/', {
+      method: 'POST',
+    }),
+
+  getTwitterAnalytics: () =>
+    request('/twitter/analytics/', {
+      method: 'GET',
+    }),
+
+  // Trend Reports
+  listReports: () =>
+    request('/reports/', {
+      method: 'GET',
+    }),
+
+  generateReport: (title, platforms) =>
+    request('/reports/generate/', {
+      method: 'POST',
+      body: JSON.stringify({ title, platforms }),
+    }),
+
+  deleteReport: (reportId) =>
+    request('/reports/delete/', {
+      method: 'POST',
+      body: JSON.stringify({ reportId }),
+    }),
+
+  // Workflows
+  listWorkflows: () =>
+    request('/workflows/', {
+      method: 'GET',
+    }),
+
+  createWorkflow: (title, caption, mediaUrl, platforms, scheduledTime) =>
+    request('/workflows/create/', {
+      method: 'POST',
+      body: JSON.stringify({ title, caption, mediaUrl, platforms, scheduledTime }),
+    }),
+
+  editWorkflow: (postId, title, caption, mediaUrl, platforms, scheduledTime) =>
+    request('/workflows/edit/', {
+      method: 'POST',
+      body: JSON.stringify({ postId, title, caption, mediaUrl, platforms, scheduledTime }),
+    }),
+
+  publishWorkflow: (postId) =>
+    request('/workflows/publish/', {
+      method: 'POST',
+      body: JSON.stringify({ postId }),
+    }),
+
+  deleteWorkflow: (postId) =>
+    request('/workflows/delete/', {
+      method: 'POST',
+      body: JSON.stringify({ postId }),
+    }),
+
+  // Revenue Deals
+  listDeals: () =>
+    request('/revenue/deals/', {
+      method: 'GET',
+    }),
+
+  createDeal: (dealData) =>
+    request('/revenue/deals/create/', {
+      method: 'POST',
+      body: JSON.stringify(dealData),
+    }),
+
+  deleteDeal: (dealId) =>
+    request(`/revenue/deals/delete/${dealId}/`, {
+      method: 'DELETE',
+    }),
+
+  // Audience Insights
+  getAudienceInsights: (platform = 'all') =>
+    request(`/audience/insights/?platform=${platform}`, {
+      method: 'GET',
     }),
 
   // Agency Dashboard API
@@ -146,3 +318,4 @@ export const api = {
     }),
 };
 
+export default api;
