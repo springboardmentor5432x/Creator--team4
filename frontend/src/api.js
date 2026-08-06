@@ -320,6 +320,84 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(settingsData),
     }),
+
+  // Social Media OAuth Authentication & Linking
+  getOAuthUrl: (platform) =>
+    request(`/auth/oauth-url/${platform}/`, { method: 'GET' }),
+
+  handleOAuthCallback: (platform, code, username = '') =>
+    request(`/auth/oauth-callback/${platform}/?code=${encodeURIComponent(code)}&username=${encodeURIComponent(username)}`, {
+      method: 'GET',
+    }),
+
+  disconnectSocialAccount: (platform) =>
+    request(`/auth/disconnect/${platform}/`, { method: 'POST' }),
+
+  // Multi-Platform & Platform-wise Analytics
+  getMultiPlatformAnalytics: () =>
+    request('/analytics/multi-platform/', { method: 'GET' }),
+
+  getPlatformWiseAnalytics: (platform) =>
+    request(`/analytics/platform/${platform}/`, { method: 'GET' }),
+
+  // Content Management Analytics
+  getContentAnalytics: (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.platform) query.append('platform', params.platform);
+    if (params.q) query.append('q', params.q);
+    if (params.sort) query.append('sort', params.sort);
+    return request(`/analytics/content/?${query.toString()}`, { method: 'GET' });
+  },
+
+  getContentDetail: (contentId) =>
+    request(`/analytics/content/${contentId}/`, { method: 'GET' }),
+
+  // Scheduled Synchronization & Logs
+  triggerSyncAll: () =>
+    request('/sync/all/', { method: 'POST' }),
+
+  getSyncHistory: () =>
+    request('/sync/history/', { method: 'GET' }),
+
+  getSyncSettings: () =>
+    request('/sync/settings/', { method: 'GET' }),
+
+  updateSyncSettings: (payload) =>
+    request('/sync/settings/', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  // Notification & Performance Alert APIs
+  getNotifications: (category = 'all') =>
+    request(`/notifications/?category=${category}`, { method: 'GET' }),
+
+  markNotificationRead: (id = null, markAll = false) =>
+    request('/notifications/mark-read/', {
+      method: 'POST',
+      body: JSON.stringify({ id, mark_all: markAll }),
+    }),
+
+  triggerAlertEvaluation: () =>
+    request('/notifications/trigger-eval/', { method: 'POST' }),
+
+  // Weekly Analytics & Scheduled Reporting APIs
+  getWeeklyAnalyticsReport: () =>
+    request('/reports/weekly/', { method: 'GET' }),
+
+  getScheduledReports: () =>
+    request('/reports/scheduled/', { method: 'GET' }),
+
+  createScheduledReport: (payload) =>
+    request('/reports/scheduled/create/', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  exportReportData: (format = 'json') =>
+    request(`/reports/export/?format=${format}`, { method: 'GET' }),
 };
 
+
 export default api;
+

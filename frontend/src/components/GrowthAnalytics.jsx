@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import ScheduledReportingCenter from './ScheduledReportingCenter';
+
 
 /**
  * Module 4 – Growth & Trend Analysis Component
@@ -181,6 +183,10 @@ export default function GrowthAnalytics({
           Real-time growth monitoring, trend detection, hashtag performance analysis, reach prediction & AI audience forecasting for connected profiles.
         </p>
       </div>
+
+      {/* 📊 MODULE 8 – AUTOMATED REPORTING & SCHEDULED DIGEST CENTER */}
+      <ScheduledReportingCenter />
+
 
       {/* 🧠 AI CONTENT RECOMMENDATION ENGINE CARD */}
       <div style={{

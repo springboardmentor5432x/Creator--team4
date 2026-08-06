@@ -24,8 +24,26 @@ from accounts.views import (
     compare_agency_creators_view,
     get_agency_revenue_view,
     manage_agency_campaigns_view,
-    manage_agency_settings_view
+    manage_agency_settings_view,
+    get_oauth_url_view,
+    oauth_callback_view,
+    disconnect_social_account_view,
+    get_multi_platform_analytics_view,
+    get_platform_wise_analytics_view,
+    get_content_analytics_view,
+    get_content_detail_view,
+    trigger_sync_all_view,
+    get_sync_history_view,
+    manage_sync_settings_view,
+    list_notifications_view,
+    mark_notification_read_view,
+    trigger_alert_evaluation_view,
+    get_weekly_analytics_report_view,
+    list_scheduled_reports_view,
+    create_scheduled_report_view,
+    export_report_data_view,
 )
+
 
 def serve_frontend(request):
     """Serve the React SPA without Django template processing (avoids JSX conflict)."""
@@ -44,6 +62,36 @@ urlpatterns = [
     path('api/users/', list_users_view, name='api_list_users'),
     path('api/users/update-role/', update_user_role_view, name='api_update_user_role'),
     
+    # OAuth Authentication & Linking
+    path('api/auth/oauth-url/<str:platform>/', get_oauth_url_view, name='api_oauth_url'),
+    path('api/auth/oauth-callback/<str:platform>/', oauth_callback_view, name='api_oauth_callback'),
+    path('api/auth/disconnect/<str:platform>/', disconnect_social_account_view, name='api_disconnect_account'),
+
+    # Multi-Platform & Platform-wise Analytics
+    path('api/analytics/multi-platform/', get_multi_platform_analytics_view, name='api_multi_platform_analytics'),
+    path('api/analytics/platform/<str:platform>/', get_platform_wise_analytics_view, name='api_platform_wise_analytics'),
+
+    # Content Management Analytics
+    path('api/analytics/content/', get_content_analytics_view, name='api_content_analytics'),
+    path('api/analytics/content/<str:content_id>/', get_content_detail_view, name='api_content_detail'),
+
+    # Scheduled Synchronization & Logs
+    path('api/sync/all/', trigger_sync_all_view, name='api_sync_all'),
+    path('api/sync/history/', get_sync_history_view, name='api_sync_history'),
+    path('api/sync/settings/', manage_sync_settings_view, name='api_sync_settings'),
+
+    # Notifications & Performance Alerts
+    path('api/notifications/', list_notifications_view, name='api_notifications'),
+    path('api/notifications/mark-read/', mark_notification_read_view, name='api_mark_notifications_read'),
+    path('api/notifications/trigger-eval/', trigger_alert_evaluation_view, name='api_trigger_alert_evaluation'),
+
+    # Weekly Analytics & Scheduled Reports
+    path('api/reports/weekly/', get_weekly_analytics_report_view, name='api_weekly_report'),
+    path('api/reports/scheduled/', list_scheduled_reports_view, name='api_scheduled_reports'),
+    path('api/reports/scheduled/create/', create_scheduled_report_view, name='api_create_scheduled_report'),
+    path('api/reports/export/', export_report_data_view, name='api_export_report_data'),
+
+
     # YouTube
     path('api/users/connect-youtube/', connect_youtube_view, name='api_connect_youtube'),
     path('api/users/disconnect-youtube/', disconnect_youtube_view, name='api_disconnect_youtube'),
@@ -103,4 +151,5 @@ urlpatterns = [
     # Serve React SPA Frontend (raw file, not Django template)
     path('', serve_frontend, name='frontend'),
 ]
+
 

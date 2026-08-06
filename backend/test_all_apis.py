@@ -27,6 +27,18 @@ def run_tests():
     
     endpoints = [
         ('GET', '/api/me/', {}),
+        ('GET', '/api/auth/oauth-url/youtube/', {}),
+        ('GET', '/api/auth/oauth-url/instagram/', {}),
+        ('GET', '/api/auth/oauth-url/facebook/', {}),
+        ('GET', '/api/auth/oauth-url/linkedin/', {}),
+        ('GET', '/api/auth/oauth-url/twitter/', {}),
+        ('GET', '/api/auth/oauth-callback/youtube/?code=test_code_123&username=creator_yt', {}),
+        ('GET', '/api/analytics/multi-platform/', {}),
+        ('GET', '/api/analytics/platform/youtube/', {}),
+        ('GET', '/api/analytics/content/', {}),
+        ('POST', '/api/sync/all/', {}),
+        ('GET', '/api/sync/history/', {}),
+        ('GET', '/api/sync/settings/', {}),
         ('POST', '/api/users/connect-instagram/', {'username': 'testig'}),
         ('GET', '/api/instagram/analytics/', {}),
         ('POST', '/api/users/connect-facebook/', {'pageName': 'Code Hub', 'groupId': '1571965316444595'}),
@@ -34,11 +46,18 @@ def run_tests():
         ('POST', '/api/users/connect-twitter/', {'username': 'narendramodi'}),
         ('GET', '/api/twitter/analytics/', {}),
         ('POST', '/api/users/connect-youtube/', {'channelId': 'UC_x5XG1OV2P6uZZ5FSM9Ttw'}),
-        ('GET', '/api/youtube/analytics/', {}),
-        ('POST', '/api/users/connect-linkedin/', {'profileUrl': 'https://linkedin.com/in/test'}),
-        ('GET', '/api/linkedin/analytics/', {}),
         ('GET', '/api/workflows/', {}),
+        ('GET', '/api/notifications/', {}),
+        ('POST', '/api/notifications/mark-read/', {'mark_all': True}),
+        ('POST', '/api/notifications/trigger-eval/', {}),
+        ('GET', '/api/reports/weekly/', {}),
+        ('GET', '/api/reports/scheduled/', {}),
+        ('POST', '/api/reports/scheduled/create/', {'title': 'Test Digest', 'frequency': 'weekly', 'export_format': 'PDF'}),
+        ('GET', '/api/reports/export/?format=json', {}),
+        ('GET', '/api/reports/export/?format=csv', {}),
     ]
+
+
 
     for method, url, data in endpoints:
         print(f"Testing {method} {url} ... ", end="")

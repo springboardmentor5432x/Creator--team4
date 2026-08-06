@@ -167,10 +167,135 @@ class AgencyCampaignCreator(models.Model):
     def __str__(self):
         return f"{self.creator_relation.creator_name} in {self.campaign.campaign_name}"
 
+class SocialPlatformAccount(models.Model):
+    PLATFORM_CHOICES = [
+        ('youtube', 'YouTube'),
+        ('instagram', 'Instagram'),
+        ('facebook', 'Facebook'),
+        ('linkedin', 'LinkedIn'),
+        ('twitter', 'X (Twitter)'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='social_accounts')
+    platform = models.CharField(max_length=50, choices=PLATFORM_CHOICES)
+    platform_user_id = models.CharField(max_length=255, blank=True, null=True)
+    username = models.CharField(max_length=255, blank=True, null=True)
+    display_name = models.CharField(max_length=255, blank=True, null=True)
+    avatar_url = models.CharField(max_length=1000, blank=True, null=True)
+    access_token = models.TextField(blank=True, null=True)
+    refresh_token = models.TextField(blank=True, null=True)
+    token_expires_at = models.DateTimeField(blank=True, null=True)
+    is_connected = models.BooleanField(default=True)
+    connected_at = models.DateTimeField(auto_now_add=True)
+    last_synced_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        unique_together = ('user', 'platform')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.platform} (@{self.username or self.platform_user_id})"
+
+class PlatformAnalyticsSnapshot(models.Model):
+    account = models.ForeignKey(SocialPlatformAccount, on_delete=models.CASCADE, related_name='snapshots')
+    followers_subscribers = models.IntegerField(default=0)
+    total_views = models.BigIntegerField(default=0)
+    reach = models.BigIntegerField(default=0)
+    impressions = models.BigIntegerField(default=0)
+    engagement_rate = models.FloatField(default=0.0)
+    posts_count = models.IntegerField(default=0)
+    raw_response = models.TextField(blank=True, null=True)  # JSON dump
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.account.platform} Snapshot - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+class ContentItemAnalytics(models.Model):
+    CONTENT_TYPES = [
+        ('video', 'Video'),
+        ('reel', 'Reel'),
+        ('post', 'Post'),
+        ('tweet', 'Tweet'),
+    ]
+    account = models.ForeignKey(SocialPlatformAccount, on_delete=models.CASCADE, related_name='content_items')
+    platform = models.CharField(max_length=50)
+    content_id = models.CharField(max_length=255)
+    title = models.CharField(max_length=500)
+    content_type = models.CharField(max_length=50, choices=CONTENT_TYPES, default='post')
+    thumbnail_url = models.CharField(max_length=1000, blank=True, null=True)
+    content_url = models.CharField(max_length=1000, blank=True, null=True)
+    views = models.BigIntegerField(default=0)
+    likes = models.BigIntegerField(default=0)
+    comments = models.BigIntegerField(default=0)
+    shares = models.BigIntegerField(default=0)
+    watch_time_minutes = models.FloatField(default=0.0)
+    reach = models.BigIntegerField(default=0)
+    impressions = models.BigIntegerField(default=0)
+    engagement_rate = models.FloatField(default=0.0)
+    published_at = models.DateTimeField(blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('account', 'content_id')
+
+    def __str__(self):
+        return f"[{self.platform}] {self.title} ({self.views} views)"
+
+class SyncHistoryLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sync_logs')
+    platform = models.CharField(max_length=50, default='all')  # 'all', 'youtube', 'instagram', etc.
+    sync_type = models.CharField(max_length=50, default='manual')  # 'manual' or 'scheduled'
+    status = models.CharField(max_length=50, default='Success')  # 'Success', 'Failed', 'In Progress'
+    items_synced = models.IntegerField(default=0)
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    error_message = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.platform} ({self.status}) @ {self.started_at}"
+
+class AutoSyncConfig(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='sync_config')
+    interval_minutes = models.IntegerField(default=360)  # Default 6 hours (360 mins)
+    auto_sync_enabled = models.BooleanField(default=True)
+    last_run_at = models.DateTimeField(blank=True, null=True)
+    next_run_at = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.user.username} Sync Settings ({self.interval_minutes}m, Active={self.auto_sync_enabled})"
+
+class SystemNotification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    category = models.CharField(max_length=50, default='performance')  # 'performance', 'engagement', 'revenue', 'weekly_summary'
+    severity = models.CharField(max_length=50, default='info')  # 'info', 'success', 'warning', 'critical'
+    is_read = models.BooleanField(default=False)
+    action_link = models.CharField(max_length=500, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"[{self.category.upper()}] {self.title} - {self.user.username}"
+
+class ScheduledReportSchedule(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='report_schedules')
+    title = models.CharField(max_length=255, default='Weekly Analytics Summary')
+    frequency = models.CharField(max_length=50, default='weekly')  # 'daily', 'weekly', 'monthly'
+    export_format = models.CharField(max_length=50, default='PDF')  # 'PDF', 'CSV', 'JSON'
+    email_recipients = models.TextField(blank=True, null=True)  # Comma separated email addresses
+    is_active = models.BooleanField(default=True)
+    last_generated_at = models.DateTimeField(blank=True, null=True)
+    next_run_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.frequency}, {self.export_format}) - {self.user.username}"
+
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
         role = 'Administrator' if instance.is_superuser else 'Creator'
         UserProfile.objects.get_or_create(user=instance, defaults={'role': role})
+        AutoSyncConfig.objects.get_or_create(user=instance)
+
+
 
 

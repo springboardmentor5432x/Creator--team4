@@ -13,7 +13,9 @@ export default function AnalyticsToolbar({
   isSyncing = false,
   lastSyncedTime = 'Synced 2 mins ago',
   onExportPdf,
-  onExportExcel
+  onExportExcel,
+  onOpenConnect,
+  onOpenSyncSettings
 }) {
   const dateOptions = [
     { id: '7d', label: 'Last 7 Days' },
@@ -108,9 +110,30 @@ export default function AnalyticsToolbar({
         })}
       </div>
 
-      {/* Right: Live Sync & Export Actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        {/* Live Sync Badge */}
+      {/* Right: Live Sync & Connect Account & Export Actions */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        {/* Connect Account OAuth Button */}
+        <button
+          onClick={onOpenConnect}
+          style={{
+            padding: '6px 12px',
+            borderRadius: '8px',
+            border: '1px solid var(--brand-500)',
+            background: 'rgba(99, 102, 241, 0.15)',
+            color: 'var(--brand-300)',
+            fontSize: '12px',
+            fontWeight: '700',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}
+          title="Connect new Social Media Account via OAuth 2.0"
+        >
+          🔑 Connect Account
+        </button>
+
+        {/* Live Sync Button & Auto-Sync Settings */}
         <button
           onClick={onRefresh}
           disabled={isSyncing}
@@ -127,10 +150,27 @@ export default function AnalyticsToolbar({
             fontWeight: '600',
             cursor: isSyncing ? 'not-allowed' : 'pointer'
           }}
-          title="Click to fetch fresh live analytics"
+          title="Click to trigger instant manual sync"
         >
           <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--emerald-400)', boxShadow: '0 0 8px var(--emerald-400)' }} />
-          <span>{isSyncing ? 'Refreshing...' : lastSyncedTime}</span>
+          <span>{isSyncing ? 'Syncing...' : lastSyncedTime}</span>
+        </button>
+
+        <button
+          onClick={onOpenSyncSettings}
+          style={{
+            padding: '6px 10px',
+            borderRadius: '8px',
+            border: '1px solid var(--border-color)',
+            background: 'var(--card-muted-bg)',
+            color: 'var(--text-secondary)',
+            fontSize: '12px',
+            fontWeight: '600',
+            cursor: 'pointer'
+          }}
+          title="Configure Auto-Sync frequency and view sync history logs"
+        >
+          ⚙️ Auto-Sync
         </button>
 
         {/* Export Buttons */}
@@ -185,3 +225,4 @@ export default function AnalyticsToolbar({
     </div>
   );
 }
+
