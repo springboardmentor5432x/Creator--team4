@@ -34,6 +34,7 @@ from schemas import UserInDB
 from security import verify_token
 from services.user_service import get_user_by_email
 from permissions import Permission, ROLE_PERMISSIONS, has_permission, has_full_or_own_permission
+from database import AsyncSessionLocal
 
 # ---------------------------------------------------------------------------
 # OAuth2 Bearer Token Scheme
@@ -93,7 +94,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInDB:
     # Step 3: Confirm the user still exists in the database.
     # The JWT may be valid but the account could have been deleted.
     # TODO (Database Teammate): get_user_by_email will run a SQLAlchemy query here.
-    user = await get_user_by_email(email)
+    async with AsyncSessionLocal() as db:
+        user = await get_user_by_email(db, email)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

@@ -46,7 +46,7 @@ class HashtagRepository:
 
         # Default sort by frequency
         sort_field = sort_by if sort_by in (
-            "frequency", "average_reach", "average_engagement", "growth_percentage"
+            "frequency", "average_reach", "average_impressions", "average_engagement", "growth_percentage"
         ) else "frequency"
         sort_dir = pymongo.ASCENDING if sort_order == "asc" else pymongo.DESCENDING
 
@@ -71,7 +71,7 @@ class HashtagRepository:
     async def get_top(self, limit: int = 10, sort_field: str = "frequency") -> List[Dict]:
         """Return the top N hashtags sorted by the given field descending."""
         db = get_database()
-        valid_fields = ("frequency", "average_reach", "average_engagement", "growth_percentage")
+        valid_fields = ("frequency", "average_reach", "average_impressions", "average_engagement", "growth_percentage")
         if sort_field not in valid_fields:
             sort_field = "frequency"
 
@@ -115,14 +115,14 @@ class HashtagRepository:
         across content_posts and content_metrics.
 
         Finds all posts containing the hashtag, joins with their metrics,
-        and calculates average reach and engagement.
+        and calculates average reach, impressions, and engagement.
 
         Args:
             hashtag_name: The hashtag to analyze (without #).
 
         Returns:
-            Dict with frequency, average_reach, average_engagement,
-            content_ids, and related_hashtags.
+            Dict with frequency, average_reach, average_impressions,
+            average_engagement, content_ids, and related_hashtags.
         """
         db = get_database()
         pipeline = [
@@ -148,6 +148,9 @@ class HashtagRepository:
                     "_id": None,
                     "frequency": {"$sum": 1},
                     "average_reach": {"$avg": {"$ifNull": ["$latest_metrics.reach", 0]}},
+                    "average_impressions": {
+                        "$avg": {"$ifNull": ["$latest_metrics.impressions", {"$ifNull": ["$latest_metrics.views", 0]}]}
+                    },
                     "average_engagement": {
                         "$avg": {"$ifNull": ["$latest_metrics.engagementRate", 0]}
                     },
@@ -164,6 +167,7 @@ class HashtagRepository:
             return {
                 "frequency": 0,
                 "average_reach": 0.0,
+                "average_impressions": 0.0,
                 "average_engagement": 0.0,
                 "content_ids": [],
                 "related_hashtags": [],

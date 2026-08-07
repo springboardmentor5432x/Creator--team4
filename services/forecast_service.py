@@ -97,10 +97,17 @@ class ForecastService:
         # Confidence based on consistency of daily growth
         confidence = calculate_confidence(follower_daily_growth) if follower_daily_growth else 0.0
 
+        # Average monthly growth (30 days)
+        avg_monthly_growth = avg_follower_growth * 30
+
         response = AudienceForecastResponse(
+            current_followers=float(current_followers),
+            current_subscribers=float(current_subscribers),
+            average_monthly_growth=round(avg_monthly_growth, 2),
             expected_followers=round(max(0, expected_followers), 2),
             expected_subscribers=round(max(0, expected_subscribers), 2),
             expected_growth_percent=round(growth_pct, 2),
+            forecast_period=f"{forecast_days}_days",
             method_used="moving_average",
             confidence=confidence,
         )

@@ -143,3 +143,46 @@ async def get_platform_analytics(
     """
     creator_id = get_creator_id(current_user)
     return await service.fetch_platform_analytics(creator_id, platform.value, days)
+
+
+@router.get("/analytics", response_model=Dict)
+async def get_all_platform_analytics(
+    days: int = Query(30, ge=1, le=90, description="Number of days of analytics to fetch"),
+    current_user: UserModel = Depends(
+        require_any_permission(Permission.ANALYTICS_VIEW, Permission.ANALYTICS_VIEW_OWN)
+    ),
+    service: SocialMediaService = Depends(get_social_service),
+):
+    """
+    Fetch raw analytics from ALL connected social media platforms in one call.
+
+    Iterates every active platform account linked to the authenticated creator,
+    calls the respective platform API, and returns a combined result.
+
+    Platforms that fail (e.g. expired token, API error) are included in
+    the 'failed' list with an error message rather than aborting the call.
+
+    Useful for initializing a dashboard that needs data from all platforms
+    without having to issue N separate requests.
+    """
+    creator_id = get_creator_id(current_user)
+    accounts = await service.social_repo.get_accounts_by_creator(creator_id)
+
+    results = []
+    failed  = []
+
+    for acc in accounts:
+        platform = acc.get("platform")
+        if not platform or not acc.get("isActive", True):
+            continue
+        try:
+            data = await service.fetch_platform_analytics(creator_id, platform, days)
+            results.append(data)
+        except Exception as exc:
+            failed.append({"platform": platform, "error": str(exc)})
+
+    return {
+        "platforms": results,
+        "failed":    failed,
+        "fetchedAt": __import__("datetime").datetime.utcnow().isoformat(),
+    }

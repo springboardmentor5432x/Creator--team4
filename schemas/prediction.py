@@ -24,7 +24,11 @@ class ReachPredictionRequest(BaseModel):
 
 class PredictionPeriod(BaseModel):
     """A single prediction for one time horizon."""
+    previous_reach: float = Field(default=0.0, description="Previous period reach value")
+    average_reach: float = Field(default=0.0, description="Average historical reach")
     predicted_reach: float = Field(ge=0, description="Predicted reach value")
+    estimated_views: float = Field(default=0.0, description="Estimated future views")
+    estimated_engagement: float = Field(default=0.0, description="Estimated engagement rate %")
     growth_percent: float = Field(description="Expected growth %")
     confidence: float = Field(
         ge=0, le=100,
@@ -34,6 +38,11 @@ class PredictionPeriod(BaseModel):
 
 class ReachPredictionResponse(BaseModel):
     """Response for POST /api/prediction/reach."""
+    previous_reach: float = 0.0
+    average_reach: float = 0.0
+    predicted_reach: float = 0.0
+    estimated_views: float = 0.0
+    estimated_engagement: float = 0.0
     next_day: PredictionPeriod
     next_week: PredictionPeriod
     next_month: PredictionPeriod
@@ -59,14 +68,22 @@ class AudienceForecastRequest(BaseModel):
 
 class AudienceForecastResponse(BaseModel):
     """Response for POST /api/forecast/audience."""
-    expected_followers: float = Field(ge=0)
-    expected_subscribers: float = Field(ge=0)
-    expected_growth_percent: float
+    current_followers: float = Field(default=0.0, ge=0)
+    current_subscribers: float = Field(default=0.0, ge=0)
+    average_monthly_growth: float = Field(default=0.0, description="Average monthly growth rate or delta")
+    expected_followers: float = Field(ge=0, alias="expected_future_followers", default=0.0)
+    expected_subscribers: float = Field(ge=0, default=0.0)
+    expected_growth_percent: float = Field(default=0.0, alias="growth_percentage")
+    forecast_period: str = Field(default="30_days", description="Period label for forecast")
     method_used: str = Field(
         default="moving_average",
         description="Algorithm used: 'moving_average'"
     )
     confidence: float = Field(
-        ge=0, le=100,
+        default=0.0, ge=0, le=100,
         description="Confidence level (0–100%)"
     )
+
+    class Config:
+        populate_by_name = True
+

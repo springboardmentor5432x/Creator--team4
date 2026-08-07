@@ -65,3 +65,20 @@ class TrendingContentResponse(BaseModel):
     trending: List[TrendScoreResponse]
     total_count: int = Field(description="Number of items returned")
     generated_at: datetime = Field(description="Timestamp of trend calculation")
+
+
+class CategoryTrendResponse(BaseModel):
+    """A category trend summary."""
+    category: str
+    total_content: int = 0
+    average_views: float = 0.0
+    average_likes: float = 0.0
+    average_comments: float = 0.0
+    average_engagement: float = 0.0
+
+
+class CategoryTrendListResponse(BaseModel):
+    """Aggregate category performance response."""
+    best_performing_category: Optional[str] = None
+    categories: List[CategoryTrendResponse]
+

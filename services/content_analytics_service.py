@@ -9,8 +9,27 @@ class ContentAnalyticsService:
     def __init__(self):
         self.repository = ContentRepository()
 
-    async def get_all_content(self, creator_id: str) -> List[Dict]:
-        return await self.repository.get_posts_by_creator(creator_id)
+    async def get_all_content(
+        self,
+        creator_id: str,
+        search: Optional[str] = None,
+        platform: Optional[str] = None,
+        date_from: Optional[datetime] = None,
+        date_to: Optional[datetime] = None,
+        sort_by: str = "publishedAt",
+        sort_order: str = "desc",
+    ) -> List[Dict]:
+        import pymongo
+        order = pymongo.DESCENDING if sort_order == "desc" else pymongo.ASCENDING
+        return await self.repository.get_posts_by_creator(
+            creator_id,
+            search=search,
+            platform=platform,
+            date_from=date_from,
+            date_to=date_to,
+            sort_by=sort_by,
+            sort_order=order,
+        )
 
     async def get_content(self, creator_id: str, post_id: str) -> Dict:
         post = await self.repository.get_post_by_id(post_id)
@@ -31,41 +50,89 @@ class ContentAnalyticsService:
         await self.get_content(creator_id, post_id)
         return await self.repository.get_metrics_history(post_id)
 
-    async def get_top_performing_content(self, creator_id: str, limit: int = 10, platform: str = None) -> List[Dict]:
-        posts = await self.repository.get_posts_by_creator(creator_id, limit=0)
-        if platform:
-            posts = [p for p in posts if p.get("platform") == platform]
-        
+    # Metrics that can be used to rank top-performing content.
+    # Each key maps to the field name inside the content_metrics document.
+    _METRIC_SORT_FIELDS = {
+        "views": "views",
+        "likes": "likes",
+        "comments": "comments",
+        "shares": "shares",
+        "watchTime": "watchTime",
+        "engagementRate": "engagementRate",
+        "performanceScore": None,  # composite — handled separately
+    }
+
+    async def get_top_performing_content(
+        self,
+        creator_id: str,
+        limit: int = 10,
+        platform: Optional[str] = None,
+        sort_by: str = "performanceScore",
+    ) -> List[Dict]:
+        posts = await self.repository.get_posts_by_creator(
+            creator_id, limit=0, platform=platform
+        )
+
+        if not posts:
+            return []
+
         post_ids = [str(p["_id"]) for p in posts]
-        insights = await self.repository.get_all_insights(post_ids)
-        
-        # Merge posts and insights, sort by performanceScore
-        insight_map = {insight["postId"]: insight for insight in insights}
-        
-        results = []
-        for p in posts:
-            p_id = str(p["_id"])
-            p_insight = insight_map.get(p_id, {})
-            score = p_insight.get("performanceScore", 0)
-            results.append({
-                "post": p,
-                "performanceScore": score
-            })
-            
-        results.sort(key=lambda x: x["performanceScore"], reverse=True)
+
+        # Fetch latest metrics for all posts in a single DB round-trip
+        metrics_list = await self.repository.get_metrics_for_posts(post_ids)
+        metrics_map = {m["postId"]: m for m in metrics_list}
+
+        if sort_by == "performanceScore":
+            # Use stored performanceScore from content_insights
+            insights = await self.repository.get_all_insights(post_ids)
+            insight_map = {i["postId"]: i for i in insights}
+            results = [
+                {
+                    "post": p,
+                    "metrics": metrics_map.get(str(p["_id"]), {}),
+                    "performanceScore": insight_map.get(str(p["_id"]), {}).get("performanceScore", 0),
+                }
+                for p in posts
+            ]
+            results.sort(key=lambda x: x["performanceScore"], reverse=True)
+        else:
+            # Sort by a specific raw metric field
+            metric_field = self._METRIC_SORT_FIELDS.get(sort_by, "views")
+            results = [
+                {
+                    "post": p,
+                    "metrics": metrics_map.get(str(p["_id"]), {}),
+                    "performanceScore": metrics_map.get(str(p["_id"]), {}).get(metric_field, 0),
+                }
+                for p in posts
+            ]
+            results.sort(key=lambda x: x["performanceScore"], reverse=True)
+
         return results[:limit]
 
-    async def compare_posts(self, creator_id: str, post1_id: str, post2_id: str) -> Dict:
-        p1 = await self.get_content(creator_id, post1_id)
-        p2 = await self.get_content(creator_id, post2_id)
-        
-        m1 = await self.repository.get_metrics_by_post(post1_id) or {}
-        m2 = await self.repository.get_metrics_by_post(post2_id) or {}
-        
-        return {
-            "post1": {"post": p1, "metrics": m1},
-            "post2": {"post": p2, "metrics": m2}
-        }
+    async def compare_posts(self, creator_id: str, post_ids: List[str]) -> Dict:
+        """Compare 2 or more posts side by side."""
+        if len(post_ids) < 2:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=400, detail="At least 2 post IDs are required for comparison")
+
+        posts = []
+        for pid in post_ids:
+            post = await self.get_content(creator_id, pid)
+            posts.append(post)
+
+        metrics_list = await self.repository.get_metrics_for_posts(post_ids)
+        metrics_map = {m["postId"]: m for m in metrics_list}
+
+        comparison = []
+        for post in posts:
+            pid = str(post["_id"])
+            comparison.append({
+                "post": post,
+                "metrics": metrics_map.get(pid, {}),
+            })
+
+        return {"comparison": comparison, "count": len(comparison)}
 
     async def reach_analysis(self, creator_id: str) -> Dict:
         summary = await self.repository.get_analytics_summary(creator_id)
@@ -96,37 +163,114 @@ class ContentAnalyticsService:
             return {
                 "totalViews": 0,
                 "totalLikes": 0,
+                "totalComments": 0,
+                "totalShares": 0,
+                "totalSaves": 0,
+                "totalReach": 0,
                 "averageEngagement": 0.0,
                 "bestContent": None,
-                "worstContent": None
+                "worstContent": None,
             }
-        
-        # Simple extraction based on schema
+
         return {
             "totalViews": summary.get("totalViews", 0),
             "totalLikes": summary.get("totalLikes", 0),
+            "totalComments": summary.get("totalComments", 0),
+            "totalShares": summary.get("totalShares", 0),
+            "totalSaves": summary.get("totalSaves", 0),
+            "totalReach": summary.get("totalReach", 0),
             "averageEngagement": summary.get("averageEngagementRate", 0.0),
-            "bestContent": None, # Could fetch from topContent list
-            "worstContent": None
+            "bestContent": None,
+            "worstContent": None,
         }
 
     async def sync_metrics(self, creator_id: str, request: MetricSyncRequest) -> str:
-        # Verify access
+        """
+        Sync a metric snapshot for a single post, then rebuild analytics_summary
+        and upsert today's performance_trends entry so all read endpoints stay current.
+
+        Flow:
+          1. Verify the post belongs to this creator.
+          2. Compute engagementRate and save a new content_metrics snapshot.
+          3. Compute performanceScore and upsert content_insights.
+          4. Fetch the latest metrics for ALL creator posts and aggregate totals.
+          5. Upsert analytics_summary with those totals.
+          6. Upsert today's performance_trends entry (one record per calendar day).
+        """
+        # 1. Verify access
         await self.get_content(creator_id, request.postId)
-        
-        # Calculate derived metrics
+
+        # 2. Compute engagement rate and persist the snapshot
         engagement_rate = calculate_engagement_rate(request.metrics, request.platform)
-        request.metrics['engagementRate'] = engagement_rate
-        
-        # Save snapshot
+        request.metrics["engagementRate"] = engagement_rate
         snapshot_id = await self.repository.save_metric_snapshot(request.postId, request.metrics)
-        
-        # Update insights
+
+        # 3. Upsert content_insights with the composite performance score
         perf_score = calculate_performance_score(request.metrics)
-        insight_data = {
+        await self.repository.upsert_content_insight(request.postId, {
             "postId": request.postId,
-            "performanceScore": perf_score
+            "performanceScore": perf_score,
+        })
+
+        # 4. Re-aggregate totals across ALL posts for this creator
+        all_posts = await self.repository.get_posts_by_creator(creator_id, limit=0)
+        all_post_ids = [str(p["_id"]) for p in all_posts]
+
+        total_views = 0
+        total_likes = 0
+        total_comments = 0
+        total_shares = 0
+        total_saves = 0
+        total_reach = 0
+        total_watch_time = 0
+        engagement_rates: List[float] = []
+
+        if all_post_ids:
+            latest_metrics = await self.repository.get_metrics_for_posts(all_post_ids)
+            for m in latest_metrics:
+                total_views    += m.get("views", 0)
+                total_likes    += m.get("likes", 0)
+                total_comments += m.get("comments", 0)
+                total_shares   += m.get("shares", 0)
+                total_saves    += m.get("saves", 0)
+                total_reach    += m.get("reach", 0)
+                total_watch_time += m.get("watchTime", 0)
+                er = m.get("engagementRate", 0.0)
+                if er:
+                    engagement_rates.append(er)
+
+        avg_engagement = (
+            round(sum(engagement_rates) / len(engagement_rates), 4)
+            if engagement_rates else 0.0
+        )
+
+        # 5. Upsert analytics_summary (one document per creator)
+        summary_data = {
+            "totalViews":            total_views,
+            "totalLikes":            total_likes,
+            "totalComments":         total_comments,
+            "totalShares":           total_shares,
+            "totalSaves":            total_saves,
+            "totalReach":            total_reach,
+            "totalWatchTime":        total_watch_time,
+            "averageEngagementRate": avg_engagement,
         }
-        await self.repository.upsert_content_insight(request.postId, insight_data)
-        
+        await self.repository.update_analytics_summary(creator_id, summary_data)
+
+        # 6. Upsert today's entry in performance_trends (daily bucket)
+        trend_data = {
+            "totalViews":        total_views,
+            "totalLikes":        total_likes,
+            "totalComments":     total_comments,
+            "totalShares":       total_shares,
+            "totalSaves":        total_saves,
+            "totalReach":        total_reach,
+            "averageWatchTime":  round(total_watch_time / len(all_post_ids), 2) if all_post_ids else 0.0,
+            "engagementRate":    avg_engagement,
+        }
+        await self.repository.upsert_performance_trend(
+            creator_id, datetime.utcnow(), trend_data
+        )
+
         return snapshot_id
+

@@ -77,3 +77,16 @@ class AgencyCreatorModel(Base):
 
     agency = relationship("AgencyProfileModel")
     creator = relationship("CreatorProfileModel")
+
+
+# Import revenue models for Module 5
+from models.revenue import (
+    SponsorshipModel,
+    RevenueTransactionModel,
+    SubscriptionRevenueModel,
+    FinancialSummaryModel,
+    BrandCollaborationModel,
+    SponsorshipStatus,
+)
+
+

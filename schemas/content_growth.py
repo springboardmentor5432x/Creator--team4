@@ -41,6 +41,9 @@ class ContentGrowthResponse(BaseModel):
     Returned by GET /api/content/{content_id}/growth.
     """
     content_id: str
+    views_after_7_days: int = Field(default=0, description="Cumulative views after 7 days of publishing")
+    likes_after_30_days: int = Field(default=0, description="Cumulative likes after 30 days of publishing")
+    watch_time_after_60_days: int = Field(default=0, description="Cumulative watch time in seconds after 60 days")
     growth_timeline: List[ContentGrowthDayResponse] = Field(
         description="Chronological list of daily metric snapshots"
     )
@@ -58,3 +61,21 @@ class ContentGrowthResponse(BaseModel):
     graph_data: Dict[str, List[GraphDataPoint]] = Field(
         description="Per-metric time series for charting"
     )
+
+
+class ContentGrowthComparisonItem(BaseModel):
+    """Growth metrics summary for a content item in comparison."""
+    content_id: str
+    title: Optional[str] = None
+    published_at: Optional[date] = None
+    views_after_7_days: int = 0
+    likes_after_30_days: int = 0
+    watch_time_after_60_days: int = 0
+    growth_percentage: Dict[str, float] = Field(default_factory=dict)
+    growth_velocity_score: float = Field(default=0.0, description="Velocity score evaluating how quickly engagement was gained")
+
+
+class ContentGrowthComparisonResponse(BaseModel):
+    """Response model for content growth comparison."""
+    comparison: List[ContentGrowthComparisonItem]
+

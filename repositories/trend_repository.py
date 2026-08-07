@@ -147,3 +147,73 @@ class TrendRepository:
         ]
         cursor = db[CONTENT_POSTS].aggregate(pipeline)
         return await cursor.to_list(length=len(content_ids))
+
+    async def aggregate_by_category(self, creator_id: str) -> List[Dict]:
+        """
+        Aggregate content posts by category and compute average metrics.
+
+        Returns:
+            List of dicts with category, total_content, average_views,
+            average_likes, average_comments, average_engagement.
+        """
+        db = get_database()
+        from bson import ObjectId
+
+        # Convert string creator_id if needed, or query directly
+        pipeline = [
+            {"$match": {"creatorId": creator_id}},
+            {
+                "$addFields": {
+                    "postIdStr": {"$toString": "$_id"}
+                }
+            },
+            {
+                "$lookup": {
+                    "from": CONTENT_METRICS,
+                    "localField": "postIdStr",
+                    "foreignField": "postId",
+                    "as": "metrics",
+                }
+            },
+            {
+                "$addFields": {
+                    "latest_metrics": {
+                        "$arrayElemAt": [
+                            {
+                                "$sortArray": {
+                                    "input": "$metrics",
+                                    "sortBy": {"snapshotDate": -1}
+                                }
+                            },
+                            0
+                        ]
+                    }
+                }
+            },
+            {
+                "$group": {
+                    "_id": {"$ifNull": ["$category", "Uncategorized"]},
+                    "total_content": {"$sum": 1},
+                    "avg_views": {"$avg": "$latest_metrics.views"},
+                    "avg_likes": {"$avg": "$latest_metrics.likes"},
+                    "avg_comments": {"$avg": "$latest_metrics.comments"},
+                    "avg_engagement": {"$avg": "$latest_metrics.engagementRate"},
+                }
+            },
+            {"$sort": {"avg_views": pymongo.DESCENDING}}
+        ]
+        cursor = db[CONTENT_POSTS].aggregate(pipeline)
+        results = await cursor.to_list(length=100)
+
+        formatted = []
+        for r in results:
+            formatted.append({
+                "category": r["_id"],
+                "total_content": r.get("total_content", 0),
+                "average_views": round(r.get("avg_views") or 0.0, 2),
+                "average_likes": round(r.get("avg_likes") or 0.0, 2),
+                "average_comments": round(r.get("avg_comments") or 0.0, 2),
+                "average_engagement": round(r.get("avg_engagement") or 0.0, 2),
+            })
+        return formatted
+

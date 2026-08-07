@@ -10,7 +10,12 @@ from datetime import datetime, timedelta
 
 from repositories.trend_repository import TrendRepository
 from repositories.content_repository import ContentRepository
-from schemas.trend import TrendScoreResponse, TrendingContentResponse
+from schemas.trend import (
+    TrendScoreResponse,
+    TrendingContentResponse,
+    CategoryTrendResponse,
+    CategoryTrendListResponse,
+)
 from utils.analytics import calculate_trend_score, normalize_scores
 
 
@@ -28,6 +33,26 @@ class TrendService:
     def __init__(self):
         self.trend_repo = TrendRepository()
         self.content_repo = ContentRepository()
+
+    async def get_category_trends(
+        self, creator_id: str
+    ) -> CategoryTrendListResponse:
+        """
+        Feature 2 — Trend Detection by Category.
+        Aggregates content performance grouped by Category.
+        """
+        categories_data = await self.trend_repo.aggregate_by_category(creator_id)
+
+        items = [
+            CategoryTrendResponse(**c) for c in categories_data
+        ]
+        best_cat = items[0].category if items else None
+
+        return CategoryTrendListResponse(
+            best_performing_category=best_cat,
+            categories=items,
+        )
+
 
     async def get_top_trending(
         self,

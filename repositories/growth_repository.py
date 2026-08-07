@@ -162,6 +162,7 @@ class GrowthRepository:
                     "shares": {"$sum": "$shares"},
                     "watch_time": {"$sum": "$watch_time"},
                     "reach": {"$sum": "$reach"},
+                    "revenue": {"$sum": "$revenue"},
                     "engagement_rate": {"$avg": "$engagement_rate"},
                     "period_start": {"$first": "$date"},
                 }

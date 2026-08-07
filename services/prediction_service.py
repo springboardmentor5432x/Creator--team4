@@ -71,17 +71,25 @@ class PredictionService:
 
         # Current reach (most recent value)
         current_reach = reach_values[-1] if reach_values else 0
+        prev_reach = reach_values[-2] if len(reach_values) > 1 else current_reach
+        avg_reach = float(sum(reach_values) / len(reach_values)) if reach_values else 0.0
+
+        view_values = [r.get("views", 0) for r in records]
+        eng_values = [r.get("engagement_rate", 0.0) for r in records]
+
+        avg_views = calculate_moving_average(view_values, 7) if view_values else 0.0
+        avg_eng = calculate_moving_average(eng_values, 7) if eng_values else 0.0
 
         # Next day: SMA(7)
         sma_7 = calculate_moving_average(reach_values, 7)
-        next_day = self._build_period(sma_7, current_reach, reach_values[-7:])
+        next_day = self._build_period(sma_7, current_reach, reach_values[-7:], prev_reach, avg_reach, avg_views, avg_eng)
 
         # Next week: SMA(7) * 7
         next_week_reach = sma_7 * 7
         weekly_values = reach_values[-7:] if len(reach_values) >= 7 else reach_values
         weekly_current = sum(weekly_values)
         next_week = self._build_period(
-            next_week_reach, weekly_current, reach_values
+            next_week_reach, weekly_current, reach_values, prev_reach * 7, avg_reach * 7, avg_views * 7, avg_eng
         )
 
         # Next month: SMA(30) * 30
@@ -89,10 +97,15 @@ class PredictionService:
         next_month_reach = sma_30 * 30
         monthly_current = sum(reach_values)
         next_month = self._build_period(
-            next_month_reach, monthly_current, reach_values
+            next_month_reach, monthly_current, reach_values, prev_reach * 30, avg_reach * 30, avg_views * 30, avg_eng
         )
 
         response = ReachPredictionResponse(
+            previous_reach=round(prev_reach, 2),
+            average_reach=round(avg_reach, 2),
+            predicted_reach=round(next_day.predicted_reach, 2),
+            estimated_views=round(avg_views, 2),
+            estimated_engagement=round(avg_eng, 2),
             next_day=next_day,
             next_week=next_week,
             next_month=next_month,
@@ -117,6 +130,10 @@ class PredictionService:
         predicted: float,
         current: float,
         values: list,
+        prev_reach: float = 0.0,
+        avg_reach: float = 0.0,
+        est_views: float = 0.0,
+        est_eng: float = 0.0,
     ) -> PredictionPeriod:
         """Build a PredictionPeriod from predicted and current values."""
         if current > 0:
@@ -127,7 +144,12 @@ class PredictionService:
         confidence = calculate_confidence(values)
 
         return PredictionPeriod(
+            previous_reach=round(prev_reach, 2),
+            average_reach=round(avg_reach, 2),
             predicted_reach=round(predicted, 2),
+            estimated_views=round(est_views, 2),
+            estimated_engagement=round(est_eng, 2),
             growth_percent=round(growth_pct, 2),
             confidence=confidence,
         )
+

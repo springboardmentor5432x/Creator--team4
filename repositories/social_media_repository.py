@@ -84,3 +84,62 @@ class SocialMediaRepository:
                 "lastSynced": datetime.utcnow(),
             }}
         )
+
+    async def update_sync_status(
+        self,
+        creator_id: str,
+        platform: str,
+        status: str,
+        error_message: Optional[str] = None,
+    ) -> None:
+        """
+        Update the sync status fields on a social_accounts document.
+
+        Called by SyncService after every sync attempt (success or failure).
+
+        Args:
+            creator_id: The creator's ID.
+            platform:   The platform name.
+            status:     One of "idle", "syncing", "error".
+            error_message: Last error message (set on failure, cleared on success).
+        """
+        db = get_database()
+        update_doc: Dict = {
+            "syncStatus": status,
+        }
+        if status == "syncing":
+            update_doc["syncStartedAt"] = datetime.utcnow()
+        elif status in ("idle", "error"):
+            update_doc["lastSyncedAt"] = datetime.utcnow()
+            update_doc["syncErrorMessage"] = error_message  # None on success
+
+        await db[SOCIAL_ACCOUNTS].update_one(
+            {"creatorId": creator_id, "platform": platform},
+            {"$set": update_doc},
+        )
+
+    async def get_all_active_accounts(self) -> List[Dict]:
+        """
+        Return all active social accounts across ALL creators.
+
+        Used by the background scheduler to iterate every connected
+        account for bulk analytics synchronisation.
+
+        Returns only the fields needed by the sync service — token fields
+        are included because this is a server-side call.
+        """
+        db = get_database()
+        cursor = db[SOCIAL_ACCOUNTS].find(
+            {"isActive": True},
+            projection={
+                "creatorId": 1,
+                "platform": 1,
+                "accountId": 1,
+                "accountName": 1,
+                "accessToken": 1,
+                "refreshToken": 1,
+                "pageAccessToken": 1,
+                "tokenExpiry": 1,
+            },
+        )
+        return await cursor.to_list(length=1000)

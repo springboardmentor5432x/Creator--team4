@@ -95,7 +95,8 @@ class UserRegisterRequest(BaseModel):
             raise ValueError("Phone number must start with a '+' country code followed by 7 to 15 digits (e.g. +91 1234567890).")
         return clean_value
 
-
+        debug.print(UserRegisterRequest.full_name,UserRegisterRequest.email,UserRegisterRequest.password,UserRegisterRequest.role,UserRegisterRequest.phone_number    )
+    
 class UserLoginRequest(BaseModel):
     """Request body for POST /api/auth/login."""
 
@@ -112,6 +113,8 @@ class TokenResponse(BaseModel):
 
     access_token: str
     token_type: str = "bearer"
+    role: UserRole
+
 
 
 class UserPublicResponse(BaseModel):

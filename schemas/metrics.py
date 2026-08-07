@@ -38,6 +38,7 @@ class PerformanceTrendBase(BaseModel):
     totalLikes: int = 0
     totalComments: int = 0
     totalShares: int = 0
+    totalSaves: int = 0
     totalReach: int = 0
     averageWatchTime: float = 0.0
     engagementRate: float = 0.0

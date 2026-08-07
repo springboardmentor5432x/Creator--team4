@@ -18,6 +18,7 @@ class HashtagResponse(BaseModel):
     name: str
     frequency: int = Field(default=0, ge=0, description="Number of times this hashtag was used")
     average_reach: float = Field(default=0.0, ge=0.0)
+    average_impressions: float = Field(default=0.0, ge=0.0)
     average_engagement: float = Field(default=0.0, ge=0.0)
     growth_percentage: float = Field(default=0.0, description="Growth % over the analysis period")
 
@@ -30,6 +31,7 @@ class HashtagDetailResponse(BaseModel):
     name: str
     frequency: int = 0
     average_reach: float = 0.0
+    average_impressions: float = 0.0
     average_engagement: float = 0.0
     growth_percentage: float = 0.0
     content_ids: List[str] = Field(

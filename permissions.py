@@ -92,6 +92,16 @@ class Permission(str, Enum):
     CAMPAIGN_UPDATE     = "campaign:update"
     CAMPAIGN_DELETE     = "campaign:delete"
 
+    # --- Revenue Analytics ---
+    REVENUE_VIEW        = "revenue:view"
+    REVENUE_VIEW_OWN    = "revenue:view:own"
+    REVENUE_CREATE      = "revenue:create"
+    REVENUE_CREATE_OWN  = "revenue:create:own"
+    REVENUE_UPDATE      = "revenue:update"
+    REVENUE_UPDATE_OWN  = "revenue:update:own"
+    REVENUE_DELETE      = "revenue:delete"
+    REVENUE_DELETE_OWN  = "revenue:delete:own"
+
 
 # ---------------------------------------------------------------------------
 # Role → Permissions Mapping
@@ -113,6 +123,10 @@ ROLE_PERMISSIONS: Dict[UserRole, FrozenSet[Permission]] = {
         Permission.CAMPAIGN_CREATE,
         Permission.CAMPAIGN_UPDATE,
         Permission.CAMPAIGN_DELETE,
+        Permission.REVENUE_VIEW,
+        Permission.REVENUE_CREATE,
+        Permission.REVENUE_UPDATE,
+        Permission.REVENUE_DELETE,
     }),
 
     # Agency — broad content/campaign access, owns creator updates
@@ -127,6 +141,10 @@ ROLE_PERMISSIONS: Dict[UserRole, FrozenSet[Permission]] = {
         Permission.CAMPAIGN_CREATE,
         Permission.CAMPAIGN_UPDATE,
         Permission.CAMPAIGN_DELETE,
+        Permission.REVENUE_VIEW,
+        Permission.REVENUE_CREATE,
+        Permission.REVENUE_UPDATE,
+        Permission.REVENUE_DELETE,
     }),
 
     # Creator — own resources only, plus content creation
@@ -138,6 +156,10 @@ ROLE_PERMISSIONS: Dict[UserRole, FrozenSet[Permission]] = {
         Permission.CONTENT_DELETE_OWN,
         Permission.ANALYTICS_VIEW_OWN,
         Permission.GROWTH_VIEW_OWN,
+        Permission.REVENUE_VIEW_OWN,
+        Permission.REVENUE_CREATE_OWN,
+        Permission.REVENUE_UPDATE_OWN,
+        Permission.REVENUE_DELETE_OWN,
     }),
 
     # Marketing Team — read analytics, manage campaigns, view creators
@@ -147,6 +169,7 @@ ROLE_PERMISSIONS: Dict[UserRole, FrozenSet[Permission]] = {
         Permission.GROWTH_VIEW,
         Permission.CAMPAIGN_CREATE,
         Permission.CAMPAIGN_UPDATE,
+        Permission.REVENUE_VIEW,
     }),
 }
 

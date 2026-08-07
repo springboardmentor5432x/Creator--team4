@@ -87,6 +87,7 @@ class HashtagService:
                 name=name,
                 frequency=stored.get("frequency", 0),
                 average_reach=stored.get("average_reach", 0.0),
+                average_impressions=stored.get("average_impressions", 0.0),
                 average_engagement=stored.get("average_engagement", 0.0),
                 growth_percentage=stored.get("growth_percentage", 0.0),
                 content_ids=[],
@@ -98,6 +99,7 @@ class HashtagService:
         await self.repository.upsert_hashtag(name, {
             "frequency": agg_result["frequency"],
             "average_reach": round(agg_result.get("average_reach", 0.0), 2),
+            "average_impressions": round(agg_result.get("average_impressions", 0.0), 2),
             "average_engagement": round(agg_result.get("average_engagement", 0.0), 2),
         })
 
@@ -105,6 +107,7 @@ class HashtagService:
             name=name,
             frequency=agg_result["frequency"],
             average_reach=round(agg_result.get("average_reach", 0.0), 2),
+            average_impressions=round(agg_result.get("average_impressions", 0.0), 2),
             average_engagement=round(agg_result.get("average_engagement", 0.0), 2),
             growth_percentage=0.0,  # Calculated from historical snapshots
             content_ids=agg_result.get("content_ids", []),
@@ -151,6 +154,7 @@ class HashtagService:
             await self.repository.upsert_hashtag(tag_name, {
                 "frequency": agg["frequency"],
                 "average_reach": round(agg.get("average_reach", 0.0), 2),
+                "average_impressions": round(agg.get("average_impressions", 0.0), 2),
                 "average_engagement": round(agg.get("average_engagement", 0.0), 2),
             })
             count += 1
@@ -165,6 +169,8 @@ class HashtagService:
             name=item.get("name", ""),
             frequency=item.get("frequency", 0),
             average_reach=item.get("average_reach", 0.0),
+            average_impressions=item.get("average_impressions", 0.0),
             average_engagement=item.get("average_engagement", 0.0),
             growth_percentage=item.get("growth_percentage", 0.0),
         )
+

@@ -91,6 +91,11 @@ class ContentGrowthService:
                 )
             )
 
+        # Calculate milestone values
+        v_7 = records[min(6, len(records) - 1)].get("views", 0) if records else 0
+        l_30 = records[min(29, len(records) - 1)].get("likes", 0) if records else 0
+        w_60 = records[min(59, len(records) - 1)].get("watch_time", 0) if records else 0
+
         # Step 4: Calculate overall growth percentages
         first = records[0]
         last = records[-1]
@@ -119,12 +124,53 @@ class ContentGrowthService:
 
         return ContentGrowthResponse(
             content_id=content_id,
+            views_after_7_days=v_7,
+            likes_after_30_days=l_30,
+            watch_time_after_60_days=w_60,
             growth_timeline=timeline,
             growth_percentage=growth_pct,
             highest_growth_day=highest,
             lowest_growth_day=lowest,
             graph_data=graph_data,
         )
+
+    async def compare_content_growth(
+        self, content_ids: list, creator_id: str
+    ):
+        """
+        Feature 5 — Compare growth velocity across multiple content items.
+        """
+        from schemas.content_growth import ContentGrowthComparisonResponse, ContentGrowthComparisonItem
+
+        items = []
+        for cid in content_ids:
+            try:
+                growth_res = await self.get_content_growth(cid, creator_id)
+                post = await self.content_repo.get_post_by_id(cid)
+                title = post.get("title") if post else None
+                pub = post.get("publishedAt") if post else None
+                pub_date = pub.date() if isinstance(pub, datetime) else pub
+
+                # Compute simple velocity score
+                v_score = round((growth_res.views_after_7_days * 0.5) + (growth_res.likes_after_30_days * 0.3), 2)
+
+                items.append(
+                    ContentGrowthComparisonItem(
+                        content_id=cid,
+                        title=title,
+                        published_at=pub_date,
+                        views_after_7_days=growth_res.views_after_7_days,
+                        likes_after_30_days=growth_res.likes_after_30_days,
+                        watch_time_after_60_days=growth_res.watch_time_after_60_days,
+                        growth_percentage=growth_res.growth_percentage,
+                        growth_velocity_score=v_score,
+                    )
+                )
+            except Exception:
+                continue
+
+        return ContentGrowthComparisonResponse(comparison=items)
+
 
     def _find_extreme_day(
         self, records: list, extreme: str

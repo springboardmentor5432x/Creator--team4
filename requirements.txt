@@ -25,3 +25,10 @@ httpx>=0.27.0
 
 # Environment variables
 python-dotenv>=1.0.0
+
+# Background task scheduler (analytics sync)
+apscheduler>=3.10.0
+
+# Report Generation (PDF & Excel)
+reportlab>=4.0.0
+openpyxl>=3.1.0

@@ -4,7 +4,7 @@ schemas/growth.py — Growth Monitoring Schemas
 Request parameters and response models for the /api/growth/* endpoints.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from datetime import date, datetime
 from pydantic import BaseModel, Field
 
@@ -24,6 +24,7 @@ class GrowthMetricBase(BaseModel):
     watch_time: int = Field(default=0, ge=0, description="Watch time in seconds")
     engagement_rate: float = Field(default=0.0, ge=0.0)
     reach: int = Field(default=0, ge=0)
+    revenue: float = Field(default=0.0, ge=0.0, description="Revenue in currency units")
 
 
 class GrowthMetricResponse(GrowthMetricBase):
@@ -78,6 +79,7 @@ class GrowthSnapshotResponse(BaseModel):
     watch_time: int = 0
     engagement_rate: float = 0.0
     reach: int = 0
+    revenue: float = 0.0
 
 
 class GrowthSummaryResponse(BaseModel):
@@ -99,3 +101,47 @@ class GrowthSummaryResponse(BaseModel):
     trend: str = Field(
         description="Overall trend: 'increasing', 'decreasing', or 'stable'"
     )
+
+
+# ---------------------------------------------------------------------------
+# Feature 7 & 8 Response Models
+# ---------------------------------------------------------------------------
+
+class GrowthPeriodHighlight(BaseModel):
+    """Highlights for highest/lowest growth periods."""
+    period_label: str
+    metric: str
+    growth_value: float
+    growth_percentage: float
+
+
+class HistoricalPerformanceResponse(BaseModel):
+    """Response model for Historical Performance Analysis."""
+    daily_performance: GrowthSummaryResponse
+    weekly_performance: GrowthSummaryResponse
+    monthly_performance: GrowthSummaryResponse
+    highest_growth_period: Optional[GrowthPeriodHighlight] = None
+    lowest_growth_period: Optional[GrowthPeriodHighlight] = None
+    performance_comparison: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Side-by-side performance delta between recent and previous periods"
+    )
+
+
+class GrowthInsightsResponse(BaseModel):
+    """Response model for Growth Insights & Recommendations."""
+    best_performing_category: Optional[str] = None
+    best_time_period_for_growth: Optional[str] = None
+    fastest_growing_content: Optional[Dict[str, Any]] = None
+    most_effective_hashtags: List[str] = Field(default_factory=list)
+    audience_growth_pattern: str = Field(
+        description="Identified growth pattern (e.g. 'Accelerating', 'Steady', 'Fluctuating')"
+    )
+    overall_growth_trend: str = Field(
+        description="Overall growth direction ('increasing', 'decreasing', 'stable')"
+    )
+    recommendations: List[str] = Field(
+        default_factory=list,
+        description="Actionable strategy suggestions based on analyzed historical data"
+    )
+

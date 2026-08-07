@@ -276,3 +276,117 @@ Stores reach predictions and audience forecasts for audit trail and caching. Aut
 - `(generated_at)` — TTL: 30 days
 
 ---
+
+# 12. platform_analytics_raw
+
+## Purpose
+Stores normalized, per-platform analytics snapshots fetched from each platform API. One record per creator per platform per day. This is the primary data source for the multi-platform analytics dashboard.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| creatorId | String | Creator profile ID |
+| platform | String | `youtube` / `instagram` / `facebook` / `linkedin` / `x` |
+| accountId | String | Platform-specific account/channel/page ID |
+| snapshotDate | Date | UTC date of this snapshot (date-only, truncated to midnight) |
+| periodDays | Number | Number of days this snapshot covers (e.g. 30) |
+| followers | Number | Followers / subscribers at snapshot time |
+| views | Number | Total or period views |
+| likes | Number | Total or period likes |
+| comments | Number | Total or period comments |
+| shares | Number | Total or period shares |
+| reach | Number | Reach (Instagram, Facebook, X) |
+| impressions | Number | Impressions (Instagram, Facebook, LinkedIn) |
+| watchTime | Number | Watch time in minutes (YouTube only) |
+| profileVisits | Number | Profile visits (Instagram only) |
+| reelPlays | Number | Reel plays (Instagram only) |
+| storyViews | Number | Story impressions (Instagram only) |
+| pageLikes | Number | Page likes (Facebook only) |
+| postImpressions | Number | Post impressions (LinkedIn only) |
+| tweetImpressions | Number | Tweet impressions (X only) |
+| reposts | Number | Retweets/reposts (X only) |
+| engagementRate | Number | Calculated engagement rate percentage |
+| recordedAt | Date | UTC timestamp when this document was inserted/updated |
+
+### Indexes
+- `(creatorId, platform, snapshotDate)` — Unique (one snapshot per platform per day)
+- `(creatorId, snapshotDate DESC)` — Multi-platform dashboard queries
+- `(platform, snapshotDate DESC)` — Platform-wide aggregation queries
+
+---
+
+# 13. content_sync_state
+
+## Purpose
+Tracks the last content-fetch timestamp per creator per platform. Used by the sync service to resume from where the last fetch left off, avoiding re-fetching all historical content on every sync cycle.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| creatorId | String | Creator profile ID |
+| platform | String | Social media platform |
+| lastFetchedAt | Date | Timestamp of the last successful content fetch |
+| totalPostsFetched | Number | Running total of posts ever fetched for this account |
+| oldestPostDate | Date | Date of the oldest post currently stored |
+| newestPostDate | Date | Date of the most recent post currently stored |
+| updatedAt | Date | When this document was last modified |
+
+### Indexes
+- `(creatorId, platform)` — Unique
+
+---
+
+# 14. report_snapshots
+
+## Purpose
+Stores full JSON snapshots of generated performance and revenue reports (weekly, monthly, quarterly, annual) for fast frontend rendering and report history previews.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| reportId | Number | Reference to `generated_reports.id` in PostgreSQL |
+| creatorId | String | Creator profile ID |
+| reportType | String | `weekly` / `monthly` / `quarterly` / `annual` / `custom` |
+| periodLabel | String | Human-readable period (e.g., "Week 31, 2026", "July 2026") |
+| summaryMetrics | Object | Aggregated total views, followers gained, engagement, revenue |
+| bestContent | Object | Details of the top performing post in the period |
+| topPlatform | Object | Details of the highest performing platform |
+| platformBreakdown | List | Per-platform statistics |
+| revenueSummary | Object | Financial totals, sponsorship, ad, affiliate breakdowns |
+| audienceSummary | Object | Audience metrics overview |
+| createdAt | Date | Timestamp when snapshot was saved |
+
+### Indexes
+- `(reportId)` — Unique
+- `(creatorId, createdAt DESC)` — Creator timeline lookup
+
+---
+
+# Database Responsibilities (Updated)
+
+### PostgreSQL
+- User Authentication
+- User Authorization
+- Roles
+- Creator Profiles
+- Agency Profiles
+- Account Settings
+- **Sync History** *(audit log for analytics syncs)*
+- **Notifications** *(NEW — in-app notification center & alerts)*
+- **Generated Reports** *(NEW — metadata & file pointers for report history)*
+
+### MongoDB
+- Social Media Accounts (`social_accounts`)
+- Content Posts (`content_posts`)
+- Content Metrics (`content_metrics`)
+- Engagement History (`engagement_history`)
+- Analytics Summary (`analytics_summary`)
+- Performance Trends (`performance_trends`)
+- Growth Metrics (`growth_metrics`)
+- Content Growth (`content_growth`)
+- Hashtags (`hashtags`)
+- Trend Scores (`trend_scores`)
+- Predictions (`predictions`)
+- Audience Analytics (`audience_analytics`)
+- Audience Demographics (`audience_demographics`)
+- Audience Behavior (`audience_behavior`)
+- **Platform Analytics Raw** *(normalized per-platform daily snapshots)*
+- **Content Sync State** *(fetch-cursor tracking per creator/platform)*
+- **Report Snapshots** *(NEW — JSON report data for instant UI rendering)*

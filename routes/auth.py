@@ -51,7 +51,7 @@ async def register(payload: UserRegisterRequest, db: AsyncSession = Depends(get_
       3. Persist the new user via user_service.create_user().
       4. Return a success response with the public user profile.
     """
-
+    print(payload.full_name,payload.email,payload.password,payload.role,payload.phone_number)
     # Step 1: Guard against duplicate emails
     # TODO (Database Teammate): get_user_by_email will hit your DB here.
     existing_user = await get_user_by_email(db, payload.email)
@@ -159,8 +159,8 @@ async def login(payload: UserLoginRequest, db: AsyncSession = Depends(get_db)):
             "role":    user.role.value,
         }
     )
-
-    return TokenResponse(access_token=access_token, token_type="bearer")
+    print(access_token)
+    return TokenResponse(access_token=access_token, token_type="bearer", role=user.role)
 
 
 # ---------------------------------------------------------------------------

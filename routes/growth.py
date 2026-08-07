@@ -20,7 +20,12 @@ from authorization import require_any_permission
 from permissions import Permission
 from models import UserModel
 from services.growth_service import GrowthService
-from schemas.growth import GrowthSummaryResponse, GrowthQueryParams
+from schemas.growth import (
+    GrowthSummaryResponse,
+    GrowthQueryParams,
+    HistoricalPerformanceResponse,
+    GrowthInsightsResponse,
+)
 
 router = APIRouter(prefix="/api/growth", tags=["Growth Monitoring"])
 
@@ -133,3 +138,36 @@ async def get_yearly_growth(
         platform=platform, start_date=start_date, end_date=end_date
     )
     return await service.get_yearly_growth(creator_id, params)
+
+
+@router.get("/historical", response_model=HistoricalPerformanceResponse)
+async def get_historical_performance(
+    platform: Optional[str] = Query(default=None, description="Filter by platform"),
+    current_user: UserModel = Depends(
+        require_any_permission(Permission.GROWTH_VIEW, Permission.GROWTH_VIEW_OWN)
+    ),
+    service: GrowthService = Depends(get_growth_service),
+):
+    """
+    Feature 7 — Historical Performance Analysis.
+    Compares daily, weekly, and monthly growth, identifying highest/lowest periods.
+    """
+    creator_id = get_creator_id(current_user)
+    return await service.get_historical_performance(creator_id, platform=platform)
+
+
+@router.get("/insights", response_model=GrowthInsightsResponse)
+async def get_growth_insights(
+    platform: Optional[str] = Query(default=None, description="Filter by platform"),
+    current_user: UserModel = Depends(
+        require_any_permission(Permission.GROWTH_VIEW, Permission.GROWTH_VIEW_OWN)
+    ),
+    service: GrowthService = Depends(get_growth_service),
+):
+    """
+    Feature 8 — Growth Insights and Recommendations.
+    Provides actionable insights based on category trends, growth pattern, hashtags, and strategy.
+    """
+    creator_id = get_creator_id(current_user)
+    return await service.get_growth_insights(creator_id, platform=platform)
+

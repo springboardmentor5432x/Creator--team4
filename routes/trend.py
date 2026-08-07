@@ -17,7 +17,7 @@ from authorization import require_any_permission
 from permissions import Permission
 from models import UserModel
 from services.trend_service import TrendService
-from schemas.trend import TrendingContentResponse
+from schemas.trend import TrendingContentResponse, CategoryTrendListResponse
 
 router = APIRouter(prefix="/api/trend", tags=["Trend Detection"])
 
@@ -40,6 +40,21 @@ def get_creator_id(current_user: UserModel) -> str:
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
+@router.get("/categories", response_model=CategoryTrendListResponse)
+async def get_category_trends(
+    current_user: UserModel = Depends(
+        require_any_permission(Permission.GROWTH_VIEW, Permission.GROWTH_VIEW_OWN)
+    ),
+    service: TrendService = Depends(get_trend_service),
+):
+    """
+    Feature 2 — Trend Detection by Category.
+    Return content performance aggregated by category with average views, likes, comments, and engagement.
+    """
+    creator_id = get_creator_id(current_user)
+    return await service.get_category_trends(creator_id)
+
 
 @router.get("/top", response_model=TrendingContentResponse)
 async def get_top_trending(
@@ -79,3 +94,4 @@ async def get_top_trending(
         date_to=dt_to,
         content_type=content_type,
     )
+
