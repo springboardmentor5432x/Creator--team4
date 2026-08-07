@@ -1,0 +1,77 @@
+-- Sponsorships Table
+
+CREATE TABLE sponsorships (
+    sponsorship_id SERIAL PRIMARY KEY,
+    creator_id VARCHAR(20) NOT NULL,
+    brand_name VARCHAR(100) NOT NULL,
+    campaign_name VARCHAR(150),
+    platform VARCHAR(50),
+    contract_amount DECIMAL(12,2),
+    amount_received DECIMAL(12,2) DEFAULT 0,
+    status VARCHAR(20) CHECK (status IN ('Pending','Active','Completed','Cancelled')),
+    start_date DATE,
+    end_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+-- Revenue Transactions table
+
+CREATE TABLE revenue_transactions (
+    transaction_id SERIAL PRIMARY KEY,
+    creator_id VARCHAR(20) NOT NULL,
+    platform VARCHAR(50),
+    revenue_source VARCHAR(50),
+    amount DECIMAL(12,2) NOT NULL,
+    currency VARCHAR(10) DEFAULT 'INR',
+    transaction_date DATE,
+    month VARCHAR(20),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+--Subscription Revenue table
+
+CREATE TABLE subscription_revenue (
+    subscription_id SERIAL PRIMARY KEY,
+    creator_id VARCHAR(20) NOT NULL,
+    platform VARCHAR(50),
+    month VARCHAR(20),
+    subscribers INTEGER DEFAULT 0,
+    revenue DECIMAL(12,2),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+--Financial Summary Table
+
+CREATE TABLE financial_summary (
+    summary_id SERIAL PRIMARY KEY,
+    creator_id VARCHAR(20) NOT NULL,
+    month VARCHAR(20),
+    total_revenue DECIMAL(12,2),
+    ad_revenue DECIMAL(12,2),
+    sponsorship_revenue DECIMAL(12,2),
+    affiliate_revenue DECIMAL(12,2),
+    subscription_revenue DECIMAL(12,2),
+    highest_revenue_source VARCHAR(50),
+    highest_platform VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+--Brand Collabrations Details Table
+
+CREATE TABLE brand_collaborations (
+    collaboration_id SERIAL PRIMARY KEY,
+    creator_id VARCHAR(20) NOT NULL,
+    sponsorship_id INTEGER,
+    deliverables TEXT,
+    campaign_status VARCHAR(30),
+    completion_percentage INTEGER DEFAULT 0,
+    payment_status VARCHAR(20),
+    remarks TEXT,
+
+    FOREIGN KEY (sponsorship_id)
+    REFERENCES sponsorships(sponsorship_id)
+    ON DELETE CASCADE
+);
+

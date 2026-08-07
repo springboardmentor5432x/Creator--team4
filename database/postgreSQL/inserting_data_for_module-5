@@ -1,0 +1,174 @@
+--Insert data into Sponsorships table
+
+INSERT INTO sponsorships
+(creator_id, brand_name, campaign_name, platform,
+ contract_amount, amount_received, status,
+ start_date, end_date)
+
+VALUES
+('CRT101',
+ 'Nike',
+ 'Summer Campaign',
+ 'Instagram',
+ 50000,
+ 25000,
+ 'Active',
+ '2026-07-01',
+ '2026-07-31');
+
+ INSERT INTO sponsorships
+(creator_id,
+ brand_name,
+ campaign_name,
+ platform,
+ contract_amount,
+ amount_received,
+ status,
+ start_date,
+ end_date)
+
+VALUES
+('crt32',
+ 'Amazon',
+ 'Prime Day Promotion',
+ 'YouTube',
+ 30000,
+ 30000,
+ 'Completed',
+ '2026-07-05',
+ '2026-07-25');
+
+
+
+--Insert data into Revenue Transaction table
+
+ INSERT INTO revenue_transactions
+(creator_id, platform, revenue_source, amount,
+ transaction_date, month)
+
+VALUES
+('CRT101',
+ 'YouTube',
+ 'Ad Revenue',
+ 35000,
+ '2026-07-20',
+ 'July');
+
+INSERT INTO revenue_transactions
+(creator_id,
+ platform,
+ revenue_source,
+ amount,
+ transaction_date,
+ month)
+ VALUES
+('crt11',
+ 'Instagram',
+ 'Brand Collaboration',
+ 25000,
+ '2026-07-18',
+ 'July'),
+
+('crt11',
+ 'YouTube',
+ 'Affiliate',
+ 7000,
+ '2026-07-15',
+ 'July'),
+
+('crt32',
+ 'YouTube',
+ 'Ad Revenue',
+ 28000,
+ '2026-07-20',
+ 'July'),
+
+('crt32',
+ 'Instagram',
+ 'Brand Collaboration',
+ 18000,
+ '2026-07-22',
+ 'July');
+
+
+--Insert data into Subscription Revenue table
+
+INSERT INTO subscription_revenue
+(creator_id, platform, month, subscribers, revenue)
+VALUES
+('crt11', 'YouTube', 'July', 2500, 18000),
+
+('crt11', 'Instagram', 'July', 1200, 9000),
+
+('crt32', 'YouTube', 'July', 1800, 15000);
+
+
+--Insert data into Financial Summary table
+
+INSERT INTO financial_summary
+(creator_id,
+ month,
+ total_revenue,
+ ad_revenue,
+ sponsorship_revenue,
+ affiliate_revenue,
+ subscription_revenue,
+ highest_revenue_source,
+ highest_platform)
+
+VALUES
+('crt11',
+ 'July',
+ 92000,
+ 35000,
+ 50000,
+ 7000,
+ 18000,
+ 'Sponsorship',
+ 'Instagram'),
+
+('crt32',
+ 'July',
+ 61000,
+ 28000,
+ 18000,
+ 6000,
+ 15000,
+ 'Ad Revenue',
+ 'YouTube');
+
+
+--Insert data into Brand Collabrations
+
+ INSERT INTO brand_collaborations
+(creator_id,
+ sponsorship_id,
+ deliverables,
+ campaign_status,
+ completion_percentage,
+ payment_status,
+ remarks)
+
+VALUES
+('crt11',
+ 1,
+ '2 Instagram Reels, 1 Story',
+ 'In Progress',
+ 60,
+ 'Partially Paid',
+ 'Content approved'),
+
+('crt32',
+ 2,
+ '1 YouTube Video',
+ 'Completed',
+ 100,
+ 'Paid',
+ 'Campaign completed successfully');
+
+ 
+ select * from sponsorships;
+ select * from revenue_transactions;
+ select * from subscription_revenue;
+ select * from financial_summary;
+ select * from brand_collaborations;

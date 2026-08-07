@@ -54,3 +54,9 @@ VALUES
 ('map11','agc21','crt11'),
 ('map12','agc21','crt32');
 
+select * from roles;
+select * from users;
+select * from creator_profiles;
+select * from agency_profiles;
+select * from account_settings;
+select * from agency_creators;
