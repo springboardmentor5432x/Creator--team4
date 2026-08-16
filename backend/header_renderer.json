@@ -1,0 +1,705 @@
+{
+  "pageTitle": "Apna College",
+  "content": {
+    "pageHeaderViewModel": {
+      "title": {
+        "dynamicTextViewModel": {
+          "text": {
+            "content": "Apna College",
+            "styleRuns": [
+              {
+                "startIndex": 12,
+                "styleRunExtensions": {
+                  "styleRunColorMapExtension": {
+                    "colorMap": [
+                      {
+                        "key": "USER_INTERFACE_THEME_DARK",
+                        "value": 4294967295
+                      },
+                      {
+                        "key": "USER_INTERFACE_THEME_LIGHT",
+                        "value": 4279440147
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "attachmentRuns": [
+              {
+                "startIndex": 12,
+                "length": 0,
+                "element": {
+                  "type": {
+                    "imageType": {
+                      "image": {
+                        "sources": [
+                          {
+                            "clientResource": {
+                              "imageName": "CHECK_CIRCLE_FILLED"
+                            },
+                            "width": 24,
+                            "height": 24
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "properties": {
+                    "layoutProperties": {
+                      "height": {
+                        "value": 24,
+                        "unit": "DIMENSION_UNIT_POINT"
+                      },
+                      "width": {
+                        "value": 24,
+                        "unit": "DIMENSION_UNIT_POINT"
+                      },
+                      "margin": {
+                        "left": {
+                          "value": 8,
+                          "unit": "DIMENSION_UNIT_POINT"
+                        }
+                      }
+                    }
+                  }
+                },
+                "alignment": "ALIGNMENT_VERTICAL_CENTER"
+              }
+            ]
+          },
+          "maxLines": 2,
+          "rendererContext": {
+            "loggingContext": {
+              "loggingDirectives": {
+                "trackingParams": "CCMQj-QKIhMIqcbCvbrGlQMVv9UQBh0Uwxox",
+                "visibility": {
+                  "types": "12"
+                }
+              }
+            },
+            "accessibilityContext": {
+              "label": "Apna College, Verified"
+            }
+          }
+        }
+      },
+      "image": {
+        "decoratedAvatarViewModel": {
+          "avatar": {
+            "avatarViewModel": {
+              "image": {
+                "sources": [
+                  {
+                    "url": "https://yt3.googleusercontent.com/FEcjRtez5od8UowDo6tTt9WlE-MrIFEmcwPMTORmK9Swk6KCklOmA3xfIG9WuLWfNYfNThQE=s72-c-k-c0x00ffffff-no-rj",
+                    "width": 72,
+                    "height": 72
+                  },
+                  {
+                    "url": "https://yt3.googleusercontent.com/FEcjRtez5od8UowDo6tTt9WlE-MrIFEmcwPMTORmK9Swk6KCklOmA3xfIG9WuLWfNYfNThQE=s120-c-k-c0x00ffffff-no-rj",
+                    "width": 120,
+                    "height": 120
+                  },
+                  {
+                    "url": "https://yt3.googleusercontent.com/FEcjRtez5od8UowDo6tTt9WlE-MrIFEmcwPMTORmK9Swk6KCklOmA3xfIG9WuLWfNYfNThQE=s160-c-k-c0x00ffffff-no-rj",
+                    "width": 160,
+                    "height": 160
+                  }
+                ],
+                "processor": {
+                  "borderImageProcessor": {
+                    "circular": true
+                  }
+                }
+              },
+              "avatarImageSize": "AVATAR_SIZE_XL",
+              "loggingDirectives": {
+                "trackingParams": "CCIQ6OENIhMIqcbCvbrGlQMVv9UQBh0Uwxox",
+                "visibility": {
+                  "types": "12"
+                }
+              }
+            }
+          }
+        }
+      },
+      "metadata": {
+        "contentMetadataViewModel": {
+          "metadataRows": [
+            {
+              "metadataParts": [
+                {
+                  "text": {
+                    "content": "@ApnaCollegeOfficial",
+                    "styleRuns": [
+                      {
+                        "weightLabel": "FONT_WEIGHT_MEDIUM",
+                        "styleRunExtensions": {
+                          "styleRunColorMapExtension": {
+                            "colorMap": [
+                              {
+                                "key": "USER_INTERFACE_THEME_DARK",
+                                "value": 4294967295
+                              },
+                              {
+                                "key": "USER_INTERFACE_THEME_LIGHT",
+                                "value": 4279440147
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "enableTruncation": true
+                }
+              ]
+            },
+            {
+              "metadataParts": [
+                {
+                  "text": {
+                    "content": "7.73M subscribers"
+                  },
+                  "accessibilityLabel": "7.73 million subscribers"
+                },
+                {
+                  "text": {
+                    "content": "1K videos",
+                    "styleRuns": [
+                      {
+                        "startIndex": 0,
+                        "length": 9
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "delimiter": "\u2022",
+          "rendererContext": {
+            "loggingContext": {
+              "loggingDirectives": {
+                "trackingParams": "CCEQ9eQKIhMIqcbCvbrGlQMVv9UQBh0Uwxox",
+                "visibility": {
+                  "types": "12"
+                }
+              }
+            }
+          }
+        }
+      },
+      "actions": {
+        "flexibleActionsViewModel": {
+          "actionsRows": [
+            {
+              "actions": [
+                {
+                  "buttonViewModel": {
+                    "title": "Subscribe",
+                    "onTap": {
+                      "innertubeCommand": {
+                        "clickTrackingParams": "CBIQot8KIhMIqcbCvbrGlQMVv9UQBh0UwxoxygEEa8Iviw==",
+                        "commandMetadata": {
+                          "webCommandMetadata": {
+                            "ignoreNavigation": true
+                          }
+                        },
+                        "modalEndpoint": {
+                          "modal": {
+                            "modalWithTitleAndButtonRenderer": {
+                              "title": {
+                                "simpleText": "Want to subscribe to this channel?"
+                              },
+                              "content": {
+                                "simpleText": "Sign in to subscribe to this channel."
+                              },
+                              "button": {
+                                "buttonRenderer": {
+                                  "style": "STYLE_MONO_FILLED",
+                                  "size": "SIZE_DEFAULT",
+                                  "isDisabled": false,
+                                  "text": {
+                                    "simpleText": "Sign in"
+                                  },
+                                  "navigationEndpoint": {
+                                    "clickTrackingParams": "CCAQ_YYEIhMIqcbCvbrGlQMVv9UQBh0UwxoxMglzdWJzY3JpYmXKAQRrwi-L",
+                                    "commandMetadata": {
+                                      "webCommandMetadata": {
+                                        "url": "https://accounts.google.com/ServiceLogin?service=youtube&uilel=3&passive=true&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26hl%3Den%26next%3D%252F%2540ApnaCollegeOfficial%26continue_action%3DQUFFLUhqazU0QndIRG5reUlvUHlYeDljckRRQjJSTkZiQXxBQ3Jtc0tsOFhOSnNrTzRyX0ppLUItZkV4MXhJZFVid1RSdU1NSGdVVzVIVkttcDROdUdBMVJSWE1zZWhtcUVpTmtwQWVHOXM2dGYtLXdacWhWWDN5UnAzQ2ZMVjhVVl83Rmd3bmx4VHI4N054cEt3dVFqT2xULTBYY2w2LXJlSUE4VWI5eDFDTFltb2kyelktU1l3V2VGZjR2TUVpNlNFa2xoakpNMDljWGNEaElBMkhCT0UtVVFBcGZKMXVJbF9DS1FiVVBvdW4xNXA&hl=en&ec=66429",
+                                        "webPageType": "WEB_PAGE_TYPE_UNKNOWN",
+                                        "rootVe": 83769
+                                      }
+                                    },
+                                    "signInEndpoint": {
+                                      "nextEndpoint": {
+                                        "clickTrackingParams": "CCAQ_YYEIhMIqcbCvbrGlQMVv9UQBh0UwxoxygEEa8Iviw==",
+                                        "commandMetadata": {
+                                          "webCommandMetadata": {
+                                            "url": "/@ApnaCollegeOfficial",
+                                            "webPageType": "WEB_PAGE_TYPE_CHANNEL",
+                                            "rootVe": 3611,
+                                            "apiUrl": "/youtubei/v1/browse"
+                                          }
+                                        },
+                                        "browseEndpoint": {
+                                          "browseId": "UCBwmMxybNva6P_5VmxjzwqA",
+                                          "params": "EgA%3D",
+                                          "canonicalBaseUrl": "/@ApnaCollegeOfficial"
+                                        }
+                                      },
+                                      "continueAction": "QUFFLUhqazU0QndIRG5reUlvUHlYeDljckRRQjJSTkZiQXxBQ3Jtc0tsOFhOSnNrTzRyX0ppLUItZkV4MXhJZFVid1RSdU1NSGdVVzVIVkttcDROdUdBMVJSWE1zZWhtcUVpTmtwQWVHOXM2dGYtLXdacWhWWDN5UnAzQ2ZMVjhVVl83Rmd3bmx4VHI4N054cEt3dVFqT2xULTBYY2w2LXJlSUE4VWI5eDFDTFltb2kyelktU1l3V2VGZjR2TUVpNlNFa2xoakpNMDljWGNEaElBMkhCT0UtVVFBcGZKMXVJbF9DS1FiVVBvdW4xNXA",
+                                      "idamTag": "66429"
+                                    }
+                                  },
+                                  "trackingParams": "CCAQ_YYEIhMIqcbCvbrGlQMVv9UQBh0Uwxox"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "accessibilityText": "Subscribe",
+                    "style": "BUTTON_VIEW_MODEL_STYLE_MONO",
+                    "trackingParams": "CBIQot8KIhMIqcbCvbrGlQMVv9UQBh0Uwxox",
+                    "isFullWidth": false,
+                    "type": "BUTTON_VIEW_MODEL_TYPE_FILLED",
+                    "buttonSize": "BUTTON_VIEW_MODEL_SIZE_DEFAULT",
+                    "state": "BUTTON_VIEW_MODEL_STATE_ACTIVE"
+                  }
+                }
+              ]
+            }
+          ],
+          "justifyContent": "FLEXIBLE_ACTIONS_JUSTIFY_CONTENT_START",
+          "minimumRowHeight": 44,
+          "rendererContext": {
+            "loggingContext": {
+              "loggingDirectives": {
+                "trackingParams": "CBIQot8KIhMIqcbCvbrGlQMVv9UQBh0Uwxox",
+                "visibility": {
+                  "types": "12"
+                },
+                "clientVeSpec": {
+                  "uiType": 184974,
+                  "veCounter": 459907496
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": {
+        "descriptionPreviewViewModel": {
+          "description": {
+            "content": "ApnaCollege is where Tech Education meets Real-world needs. "
+          },
+          "maxLines": 2,
+          "truncationText": {
+            "content": "...more",
+            "styleRuns": [
+              {
+                "startIndex": 0,
+                "length": 7,
+                "weight": 500
+              }
+            ]
+          },
+          "alwaysShowTruncationText": true,
+          "rendererContext": {
+            "loggingContext": {
+              "loggingDirectives": {
+                "trackingParams": "CBsQr_4KIhMIqcbCvbrGlQMVv9UQBh0Uwxox",
+                "visibility": {
+                  "types": "12"
+                }
+              }
+            },
+            "accessibilityContext": {
+              "label": "Description. ApnaCollege is where Tech Education meets Real-world needs....tap for more."
+            },
+            "commandContext": {
+              "onTap": {
+                "innertubeCommand": {
+                  "clickTrackingParams": "CBsQr_4KIhMIqcbCvbrGlQMVv9UQBh0UwxoxygEEa8Iviw==",
+                  "showEngagementPanelEndpoint": {
+                    "engagementPanel": {
+                      "engagementPanelSectionListRenderer": {
+                        "header": {
+                          "engagementPanelTitleHeaderRenderer": {
+                            "title": {
+                              "simpleText": "Apna College"
+                            },
+                            "visibilityButton": {
+                              "buttonRenderer": {
+                                "style": "STYLE_DEFAULT",
+                                "size": "SIZE_DEFAULT",
+                                "isDisabled": false,
+                                "icon": {
+                                  "iconType": "CLOSE"
+                                },
+                                "accessibility": {
+                                  "label": "Close"
+                                },
+                                "trackingParams": "CB8Q8FsiEwipxsK9usaVAxW_1RAGHRTDGjE=",
+                                "accessibilityData": {
+                                  "accessibilityData": {
+                                    "label": "Close"
+                                  }
+                                },
+                                "command": {
+                                  "clickTrackingParams": "CB8Q8FsiEwipxsK9usaVAxW_1RAGHRTDGjHKAQRrwi-L",
+                                  "changeEngagementPanelVisibilityAction": {
+                                    "targetId": "6b30fc02-0000-2314-b3ef-34391601269b",
+                                    "visibility": "ENGAGEMENT_PANEL_VISIBILITY_HIDDEN"
+                                  }
+                                }
+                              }
+                            },
+                            "trackingParams": "CBwQ040EIhMIqcbCvbrGlQMVv9UQBh0Uwxox"
+                          }
+                        },
+                        "content": {
+                          "sectionListRenderer": {
+                            "contents": [
+                              {
+                                "itemSectionRenderer": {
+                                  "contents": [
+                                    {
+                                      "continuationItemRenderer": {
+                                        "trigger": "CONTINUATION_TRIGGER_ON_ITEM_SHOWN",
+                                        "continuationEndpoint": {
+                                          "clickTrackingParams": "CB4Quy8YACITCKnGwr26xpUDFb_VEAYdFMMaMcoBBGvCL4s=",
+                                          "commandMetadata": {
+                                            "webCommandMetadata": {
+                                              "sendPost": true,
+                                              "apiUrl": "/youtubei/v1/browse"
+                                            }
+                                          },
+                                          "continuationCommand": {
+                                            "token": "4qmFsgJgEhhVQ0J3bU14eWJOdmE2UF81Vm14anp3cUEaRDhnWXJHaW1hQVNZS0pEWmlNekJtWXpBekxUQXdNREF0TWpNeE5DMWlNMlZtTFRNME16a3hOakF4TWpZNVlnJTNEJTNE",
+                                            "request": "CONTINUATION_REQUEST_TYPE_BROWSE"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "trackingParams": "CB4Quy8YACITCKnGwr26xpUDFb_VEAYdFMMaMQ==",
+                                  "sectionIdentifier": "6b30fc03-0000-2314-b3ef-34391601269b",
+                                  "targetId": "6b30fc03-0000-2314-b3ef-34391601269b"
+                                }
+                              }
+                            ],
+                            "trackingParams": "CB0Qui8iEwipxsK9usaVAxW_1RAGHRTDGjE=",
+                            "scrollPaneStyle": {
+                              "scrollable": true
+                            }
+                          }
+                        },
+                        "targetId": "6b30fc02-0000-2314-b3ef-34391601269b",
+                        "identifier": {
+                          "surface": "ENGAGEMENT_PANEL_SURFACE_BROWSE",
+                          "tag": "6b30fc02-0000-2314-b3ef-34391601269b"
+                        }
+                      }
+                    },
+                    "identifier": {
+                      "surface": "ENGAGEMENT_PANEL_SURFACE_BROWSE",
+                      "tag": "6b30fc02-0000-2314-b3ef-34391601269b"
+                    },
+                    "engagementPanelPresentationConfigs": {
+                      "engagementPanelPopupPresentationConfig": {
+                        "popupType": "PANEL_POPUP_TYPE_DIALOG"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "attribution": {
+        "attributionViewModel": {
+          "text": {
+            "content": " linktr.ee/apnacollege.in",
+            "commandRuns": [
+              {
+                "startIndex": 0,
+                "length": 25,
+                "onTap": {
+                  "innertubeCommand": {
+                    "clickTrackingParams": "CBoQmokLGAIiEwipxsK9usaVAxW_1RAGHRTDGjHKAQRrwi-L",
+                    "commandMetadata": {
+                      "webCommandMetadata": {
+                        "url": "https://www.youtube.com/redirect?event=channel_header&redir_token=QUFFLUhqazRlV1BvT3NYcjlkQ2xyYzRIU2Q4WU9ITEJGd3xBQ3Jtc0tuWmdKMVFFTk9oMVAxb1B2S3ZlWUk1TE5hNGV0NGprajIyYjlZNVFMVGJtZ3NhamI1NWpFWFMxNGR0Q2ZVQU15YTUweTFBNUNzMzJxTXhNVGxmNHV2UE12X2I4SURMalllSThPRzVGMzQ1cGtEZ3h5Zw&q=https%3A%2F%2Flinktr.ee%2Fapnacollege.in",
+                        "webPageType": "WEB_PAGE_TYPE_UNKNOWN",
+                        "rootVe": 83769
+                      }
+                    },
+                    "urlEndpoint": {
+                      "url": "https://www.youtube.com/redirect?event=channel_header&redir_token=QUFFLUhqazRlV1BvT3NYcjlkQ2xyYzRIU2Q4WU9ITEJGd3xBQ3Jtc0tuWmdKMVFFTk9oMVAxb1B2S3ZlWUk1TE5hNGV0NGprajIyYjlZNVFMVGJtZ3NhamI1NWpFWFMxNGR0Q2ZVQU15YTUweTFBNUNzMzJxTXhNVGxmNHV2UE12X2I4SURMalllSThPRzVGMzQ1cGtEZ3h5Zw&q=https%3A%2F%2Flinktr.ee%2Fapnacollege.in",
+                      "target": "TARGET_NEW_WINDOW"
+                    }
+                  }
+                },
+                "loggingDirectives": {
+                  "trackingParams": "CBoQmokLGAIiEwipxsK9usaVAxW_1RAGHRTDGjE=",
+                  "visibility": {
+                    "types": "12"
+                  }
+                }
+              }
+            ],
+            "styleRuns": [
+              {
+                "weightLabel": "FONT_WEIGHT_NORMAL",
+                "styleRunExtensions": {
+                  "styleRunColorMapExtension": {
+                    "colorMap": [
+                      {
+                        "key": "USER_INTERFACE_THEME_DARK",
+                        "value": 4282296063
+                      },
+                      {
+                        "key": "USER_INTERFACE_THEME_LIGHT",
+                        "value": 4278607828
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "attachmentRuns": [
+              {
+                "startIndex": 0,
+                "length": 0,
+                "element": {
+                  "type": {
+                    "imageType": {
+                      "image": {
+                        "sources": [
+                          {
+                            "customImageSource": {
+                              "youtubeIconSource": {
+                                "clientResource": {
+                                  "icon": "YTICON_OUTLINE_LINK_S24"
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "properties": {
+                    "layoutProperties": {
+                      "height": {
+                        "value": 14,
+                        "unit": "DIMENSION_UNIT_POINT"
+                      },
+                      "width": {
+                        "value": 14,
+                        "unit": "DIMENSION_UNIT_POINT"
+                      }
+                    }
+                  }
+                },
+                "alignment": "ALIGNMENT_VERTICAL_CENTER"
+              }
+            ]
+          },
+          "suffix": {
+            "content": "and 2 more links",
+            "commandRuns": [
+              {
+                "startIndex": 0,
+                "length": 16,
+                "onTap": {
+                  "innertubeCommand": {
+                    "clickTrackingParams": "CBUQmIkLGAAiEwipxsK9usaVAxW_1RAGHRTDGjHKAQRrwi-L",
+                    "showEngagementPanelEndpoint": {
+                      "engagementPanel": {
+                        "engagementPanelSectionListRenderer": {
+                          "header": {
+                            "engagementPanelTitleHeaderRenderer": {
+                              "title": {
+                                "simpleText": "Apna College"
+                              },
+                              "visibilityButton": {
+                                "buttonRenderer": {
+                                  "style": "STYLE_DEFAULT",
+                                  "size": "SIZE_DEFAULT",
+                                  "isDisabled": false,
+                                  "icon": {
+                                    "iconType": "CLOSE"
+                                  },
+                                  "accessibility": {
+                                    "label": "Close"
+                                  },
+                                  "trackingParams": "CBkQ8FsiEwipxsK9usaVAxW_1RAGHRTDGjE=",
+                                  "accessibilityData": {
+                                    "accessibilityData": {
+                                      "label": "Close"
+                                    }
+                                  },
+                                  "command": {
+                                    "clickTrackingParams": "CBkQ8FsiEwipxsK9usaVAxW_1RAGHRTDGjHKAQRrwi-L",
+                                    "changeEngagementPanelVisibilityAction": {
+                                      "targetId": "6b30fc04-0000-2314-b3ef-34391601269b",
+                                      "visibility": "ENGAGEMENT_PANEL_VISIBILITY_HIDDEN"
+                                    }
+                                  }
+                                }
+                              },
+                              "trackingParams": "CBYQ040EIhMIqcbCvbrGlQMVv9UQBh0Uwxox"
+                            }
+                          },
+                          "content": {
+                            "sectionListRenderer": {
+                              "contents": [
+                                {
+                                  "itemSectionRenderer": {
+                                    "contents": [
+                                      {
+                                        "continuationItemRenderer": {
+                                          "trigger": "CONTINUATION_TRIGGER_ON_ITEM_SHOWN",
+                                          "continuationEndpoint": {
+                                            "clickTrackingParams": "CBgQuy8YACITCKnGwr26xpUDFb_VEAYdFMMaMcoBBGvCL4s=",
+                                            "commandMetadata": {
+                                              "webCommandMetadata": {
+                                                "sendPost": true,
+                                                "apiUrl": "/youtubei/v1/browse"
+                                              }
+                                            },
+                                            "continuationCommand": {
+                                              "token": "4qmFsgJgEhhVQ0J3bU14eWJOdmE2UF81Vm14anp3cUEaRDhnWXJHaW1hQVNZS0pEWmlNekJtWXpBMUxUQXdNREF0TWpNeE5DMWlNMlZtTFRNME16a3hOakF4TWpZNVlnJTNEJTNE",
+                                              "request": "CONTINUATION_REQUEST_TYPE_BROWSE"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ],
+                                    "trackingParams": "CBgQuy8YACITCKnGwr26xpUDFb_VEAYdFMMaMQ==",
+                                    "sectionIdentifier": "6b30fc05-0000-2314-b3ef-34391601269b",
+                                    "targetId": "6b30fc05-0000-2314-b3ef-34391601269b"
+                                  }
+                                }
+                              ],
+                              "trackingParams": "CBcQui8iEwipxsK9usaVAxW_1RAGHRTDGjE=",
+                              "scrollPaneStyle": {
+                                "scrollable": true
+                              }
+                            }
+                          },
+                          "targetId": "6b30fc04-0000-2314-b3ef-34391601269b",
+                          "identifier": {
+                            "surface": "ENGAGEMENT_PANEL_SURFACE_BROWSE",
+                            "tag": "6b30fc04-0000-2314-b3ef-34391601269b"
+                          }
+                        }
+                      },
+                      "identifier": {
+                        "surface": "ENGAGEMENT_PANEL_SURFACE_BROWSE",
+                        "tag": "6b30fc04-0000-2314-b3ef-34391601269b"
+                      },
+                      "engagementPanelPresentationConfigs": {
+                        "engagementPanelPopupPresentationConfig": {
+                          "popupType": "PANEL_POPUP_TYPE_DIALOG"
+                        }
+                      }
+                    }
+                  }
+                },
+                "loggingDirectives": {
+                  "trackingParams": "CBUQmIkLGAAiEwipxsK9usaVAxW_1RAGHRTDGjE=",
+                  "visibility": {
+                    "types": "12"
+                  }
+                }
+              }
+            ],
+            "styleRuns": [
+              {
+                "fontName": "",
+                "fontSize": 0,
+                "weightLabel": "FONT_WEIGHT_MEDIUM"
+              }
+            ]
+          },
+          "rendererContext": {
+            "loggingContext": {
+              "loggingDirectives": {
+                "trackingParams": "CBQQjaULIhMIqcbCvbrGlQMVv9UQBh0Uwxox",
+                "visibility": {
+                  "types": "12"
+                }
+              }
+            }
+          }
+        }
+      },
+      "banner": {
+        "imageBannerViewModel": {
+          "image": {
+            "sources": [
+              {
+                "url": "https://yt3.googleusercontent.com/NIunuXKtGDF33c22wJvT3uhA3_ZiY7UBNqTlI3OP0FptcFVbdgURsGH9sfysoESVSg9ZVv1ZuwE=w1060-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj",
+                "width": 1060,
+                "height": 175
+              },
+              {
+                "url": "https://yt3.googleusercontent.com/NIunuXKtGDF33c22wJvT3uhA3_ZiY7UBNqTlI3OP0FptcFVbdgURsGH9sfysoESVSg9ZVv1ZuwE=w1138-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj",
+                "width": 1138,
+                "height": 188
+              },
+              {
+                "url": "https://yt3.googleusercontent.com/NIunuXKtGDF33c22wJvT3uhA3_ZiY7UBNqTlI3OP0FptcFVbdgURsGH9sfysoESVSg9ZVv1ZuwE=w1707-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj",
+                "width": 1707,
+                "height": 283
+              },
+              {
+                "url": "https://yt3.googleusercontent.com/NIunuXKtGDF33c22wJvT3uhA3_ZiY7UBNqTlI3OP0FptcFVbdgURsGH9sfysoESVSg9ZVv1ZuwE=w2120-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj",
+                "width": 2120,
+                "height": 351
+              },
+              {
+                "url": "https://yt3.googleusercontent.com/NIunuXKtGDF33c22wJvT3uhA3_ZiY7UBNqTlI3OP0FptcFVbdgURsGH9sfysoESVSg9ZVv1ZuwE=w2276-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj",
+                "width": 2276,
+                "height": 377
+              },
+              {
+                "url": "https://yt3.googleusercontent.com/NIunuXKtGDF33c22wJvT3uhA3_ZiY7UBNqTlI3OP0FptcFVbdgURsGH9sfysoESVSg9ZVv1ZuwE=w2560-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj",
+                "width": 2560,
+                "height": 424
+              }
+            ]
+          },
+          "style": "IMAGE_BANNER_STYLE_INSET",
+          "rendererContext": {
+            "loggingContext": {
+              "loggingDirectives": {
+                "trackingParams": "CBMQnfILIhMIqcbCvbrGlQMVv9UQBh0Uwxox",
+                "visibility": {
+                  "types": "12"
+                }
+              }
+            }
+          }
+        }
+      },
+      "rendererContext": {
+        "loggingContext": {
+          "loggingDirectives": {
+            "trackingParams": "CBIQot8KIhMIqcbCvbrGlQMVv9UQBh0Uwxox",
+            "visibility": {
+              "types": "12"
+            }
+          }
+        }
+      }
+    }
+  }
+}

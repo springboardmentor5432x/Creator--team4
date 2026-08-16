@@ -1,0 +1,204 @@
+/* =========================================
+   CreatorIQ Global Styles & CSS Variable Themes
+   ========================================= */
+
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Global Theme Tokens (Dark Mode Default) */
+  --bg-color: #08090d;
+  --card-bg: #10121a;
+  --card-muted-bg: rgba(22, 25, 36, 0.65);
+  --border-color: #1f2230;
+  --border-muted: #2a2e40;
+  
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-inverse: #0f172a;
+
+  /* Brand Accents */
+  --brand-50: #f5f3ff;
+  --brand-100: #ede9fe;
+  --brand-300: #c084fc;
+  --brand-400: #a855f7;
+  --brand-500: #8b5cf6;
+  --brand-600: #7c3aed;
+  --brand-700: #6d28d9;
+  
+  --indigo-500: #6366f1;
+  --indigo-600: #4f46e5;
+  --blue-400: #60a5fa;
+
+  /* Status Tokens */
+  --rose-400: #fb7185;
+  --rose-500: #f43f5e;
+  --rose-600: #e11d48;
+  --emerald-400: #34d399;
+  --emerald-500: #10b981;
+  --orange-500: #f97316;
+  --yellow-500: #eab308;
+
+  /* Glow colors */
+  --glow-color: rgba(139, 92, 246, 0.15);
+  --glow-secondary: rgba(59, 130, 246, 0.12);
+}
+
+/* Light Theme Tokens */
+[data-theme="light"] {
+  --bg-color: #f8fafc;
+  --card-bg: #ffffff;
+  --card-muted-bg: rgba(241, 245, 249, 0.85);
+  --border-color: #e2e8f0;
+  --border-muted: #cbd5e1;
+  
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-inverse: #ffffff;
+
+  --brand-500: #6d28d9;
+  --brand-600: #5b21b6;
+  --brand-400: #7c3aed;
+
+  --glow-color: rgba(109, 40, 217, 0.08);
+  --glow-secondary: rgba(59, 130, 246, 0.06);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-color);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-muted);
+}
+
+/* =========================================
+   Utility Classes
+   ========================================= */
+
+.h-full { height: 100%; }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.relative { position: relative; }
+.absolute { position: absolute; }
+.overflow-hidden { overflow: hidden; }
+.overflow-y-auto { overflow-y: auto; }
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.w-full { width: 100%; }
+.select-none { user-select: none; }
+
+/* =========================================
+   Glow Effects
+   ========================================= */
+
+.glow-purple {
+  box-shadow: 0 0 50px -10px var(--glow-color);
+}
+.glow-blue {
+  box-shadow: 0 0 50px -10px var(--glow-secondary);
+}
+.text-glow {
+  text-shadow: 0 0 10px rgba(139, 92, 246, 0.25);
+}
+
+/* =========================================
+   Animations
+   ========================================= */
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .7; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes float-delayed {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-pulse-slow    { animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+.animate-float         { animation: float 6s ease-in-out infinite; }
+.animate-float-delayed { animation: float-delayed 6s ease-in-out infinite 3s; }
+.animate-slide-up      { animation: slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-spin          { animation: spin 0.8s linear infinite; }
+.animate-fade-in       { animation: fade-in 0.4s ease-out both; }
+
+/* =========================================
+   Responsive Branding Panel
+   ========================================= */
+
+@media (min-width: 1024px) {
+  .branding-panel {
+    display: flex !important;
+  }
+}
+
+/* =========================================
+   Print Styles
+   ========================================= */
+@media print {
+  :root {
+    --bg-color: #ffffff !important;
+    --card-bg: #ffffff !important;
+    --card-muted-bg: #f8f9fa !important;
+    --border-color: #e2e8f0 !important;
+    --text-primary: #000000 !important;
+    --text-secondary: #333333 !important;
+    --text-muted: #555555 !important;
+  }
+  .print-hide-sidebar { display: none !important; }
+  .print-main-content { overflow: visible !important; height: auto !important; background: white !important; }
+  body, html, #root { height: auto !important; background: white !important; }
+  .dashboard-container { height: auto !important; overflow: visible !important; display: block !important; }
+  * { color: black !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-shadow: none !important; }
+  /* Specific overrides */
+  div[style*="linear-gradient"] { background: none !important; color: black !important; border: 1px solid #ccc !important; }
+}
+
