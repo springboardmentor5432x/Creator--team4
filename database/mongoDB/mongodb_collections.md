@@ -1,4 +1,4 @@
-# MongoDB Database Design - CreatorIQ
+# MongoDB Database Design for Module-2- CreatorIQ
 
 ## Overview
 
