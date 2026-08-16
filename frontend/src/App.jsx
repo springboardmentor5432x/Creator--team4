@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -85,19 +85,19 @@ function AppContent() {
         }
       } else if (user.role === 'Marketing Team') {
         // Marketing Team granted paths (Default: /reports)
-        const allowed = ['/reports', '/youtube', '/instagram', '/facebook', '/linkedin', '/twitter', '/workflows', '/audience', '/revenue'];
+        const allowed = ['/reports', '/agency', '/youtube', '/instagram', '/facebook', '/linkedin', '/twitter', '/workflows', '/audience', '/revenue'];
         if (!allowed.includes(path)) {
           navigate('/reports', { replace: true });
         }
       } else if (user.role === 'Agency') {
         // Agency granted paths (Default: /agency)
-        const allowed = ['/agency', '/workflows', '/reports', '/audience', '/revenue'];
+        const allowed = ['/agency', '/workflows', '/reports', '/audience', '/revenue', '/youtube', '/instagram', '/facebook', '/linkedin', '/twitter'];
         if (!allowed.includes(path)) {
           navigate('/agency', { replace: true });
         }
       } else {
         // Creator granted paths (Default: /youtube)
-        const allowed = ['/youtube', '/instagram', '/facebook', '/linkedin', '/twitter', '/workflows', '/reports', '/audience', '/revenue'];
+        const allowed = ['/agency', '/youtube', '/instagram', '/facebook', '/linkedin', '/twitter', '/workflows', '/reports', '/audience', '/revenue'];
         if (!allowed.includes(path)) {
           navigate('/youtube', { replace: true });
         }
