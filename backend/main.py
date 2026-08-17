@@ -480,11 +480,6 @@ def get_instagram_analytics(current_user: UserDB = Depends(get_current_user), db
             }
         ],
         "user": format_user_response(current_user)
-=======
-        "status": "ok",
-        "service": settings.APP_NAME,
-        "version": settings.APP_VERSION,
->>>>>>> 57c155e42ee0ecafbeca9c7776dbb867a772d19b
     }
 
 

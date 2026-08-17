@@ -106,7 +106,7 @@ export default function NotificationCenterModal({ isOpen, onClose, onNavigate })
           padding: '1.25rem 1.5rem',
           borderBottom: '1px solid var(--border-color, #1e293b)',
           display: 'flex',
-          justify: 'space-between',
+          justifyContent: 'space-between',
           alignItems: 'center',
           background: 'rgba(255,255,255,0.02)'
         }}>

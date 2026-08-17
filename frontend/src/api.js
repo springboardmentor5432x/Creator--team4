@@ -396,6 +396,15 @@ export const api = {
 
   exportReportData: (format = 'json') =>
     request(`/reports/export/?format=${format}`, { method: 'GET' }),
+
+  // System Administration User Management
+  listUsers: () => request('/users/', { method: 'GET' }),
+
+  updateUserRole: (userId, role) =>
+    request('/users/update-role/', {
+      method: 'POST',
+      body: JSON.stringify({ userId, role }),
+    }),
 };
 
 
